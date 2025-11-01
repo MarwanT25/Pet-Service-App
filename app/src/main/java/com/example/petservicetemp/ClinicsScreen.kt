@@ -43,7 +43,7 @@ class ClinicsScreen : ComponentActivity() {
 
 @Preview
 @Composable
-fun ClinicScreen() {
+fun ClinicScreen() {//list of clinics
     var menuModifier = Modifier
         .background(
             color = colorResource(id = R.color.primary),
