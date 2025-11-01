@@ -1,31 +1,26 @@
 package com.example.petservicetemp
 
 import android.os.Bundle
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.modifier.modifierLocalConsumer
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.example.petservicetemp.ui.theme.PetServiceTempTheme
@@ -36,10 +31,10 @@ class ClinicsScreen : ComponentActivity() {
         setContent {
             PetServiceTempTheme() {
                 Surface(
-                    modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colors.background
                 ) {
-                    AppBarClinicScreen()
-
+                    ClinicScreen()
                 }
             }
         }
@@ -48,16 +43,17 @@ class ClinicsScreen : ComponentActivity() {
 
 @Preview
 @Composable
-fun AppBarClinicScreen() {
+fun ClinicScreen() {
     var menuModifier = Modifier
         .background(
             color = colorResource(id = R.color.primary),
             shape = RoundedCornerShape(16.dp)
         )
         .border(2.dp, colorResource(id = R.color.primary_dark), RoundedCornerShape(16.dp))
+
     Scaffold(
         topBar = {
-            androidx.compose.material.TopAppBar(
+            TopAppBar(
                 title = {
                     Text(
                         "Clinics",
@@ -82,6 +78,7 @@ fun AppBarClinicScreen() {
             Column(
                 modifier = Modifier.padding(padding)
             ) {
+                // الفلاتر والبحث
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -134,12 +131,11 @@ fun AppBarClinicScreen() {
                         }
                     }
 
-                    DropdownMenu(// الفرعيه
+                    DropdownMenu(
                         expanded = ratingExpanded,
                         onDismissRequest = { ratingExpanded = false },
                         offset = DpOffset(x = 120.dp, y = 0.dp),
                         modifier = menuModifier
-
                     ) {
                         DropdownMenuItem(onClick = { /* High to Low */ }) { Text("High to Low") }
                         DropdownMenuItem(onClick = { /* Low to High */ }) { Text("Low to High") }
@@ -150,14 +146,13 @@ fun AppBarClinicScreen() {
                         onDismissRequest = { serviceExpanded = false },
                         offset = DpOffset(x = 120.dp, y = 80.dp),
                         modifier = menuModifier
-
-
                     ) {
                         DropdownMenuItem(onClick = { /* Basic Care */ }) { Text("Basic Care") }
                         DropdownMenuItem(onClick = { /* Grooming */ }) { Text("Grooming Services") }
                         DropdownMenuItem(onClick = { /* Boarding */ }) { Text("Boarding & Daycare") }
                         DropdownMenuItem(onClick = { /* Medical */ }) { Text("Medical & Surgical Care") }
                     }
+
                     OutlinedTextField(
                         value = "",
                         onValueChange = { /* هنا تحطي اللوجيك */ },
@@ -180,31 +175,48 @@ fun AppBarClinicScreen() {
                             )
                         }
                     )
-
-
                 }
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2), // يعني صف فيه عمودين (اتنين كارد جنب بعض)
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                // Grid بديل LazyVerticalGrid
+                val itemsCount = 10
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(10) { index ->
+                    items(itemsCount / 2 + itemsCount % 2) { rowIndex ->
+
+                        val firstIndex = rowIndex * 2
                         CardOfClinics(
-                            name = "Clinic #$index",
+                            name = "Clinic #$firstIndex",
                             rating = 4.5,
-                            IsOpen = index % 2 == 0, // واحدة مفتوحة والتانية مقفولة للتجربة
+                            IsOpen = firstIndex % 2 == 0,
                             location = "Cairo, Egypt",
                             reviews = 120,
-                            onCallNow = { println("Calling Clinic #$index") },
-                            onBookAppointment = { println("Booking for Clinic #$index") }
+                            onCallNow = { println("Calling Clinic #$firstIndex") },
+                            onBookAppointment = { println("Booking for Clinic #$firstIndex") },
+                            modifier = Modifier.weight(1f)
                         )
-                    }
-                }
 
-                //card
+                        val secondIndex = firstIndex + 1
+                        if (secondIndex < itemsCount) {
+                            CardOfClinics(
+                                name = "Clinic #$secondIndex",
+                                rating = 4.5,
+                                IsOpen = secondIndex % 2 == 0,
+                                location = "Cairo, Egypt",
+                                reviews = 120,
+                                onCallNow = { println("Calling Clinic #$secondIndex") },
+                                onBookAppointment = { println("Booking for Clinic #$secondIndex") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+
+                }
             }
         },
         bottomBar = {
@@ -221,7 +233,6 @@ fun AppBarClinicScreen() {
                     onClick = { selectedItem = "Home" },
                     selectedContentColor = Color.White,
                     unselectedContentColor = colorResource(id = R.color.primary_dark2)
-
                 )
 
                 BottomNavigationItem(
@@ -266,22 +277,32 @@ fun AppBarClinicScreen() {
 
 @Composable
 fun CardOfClinics(
-    name: String, rating: Double, IsOpen: Boolean, location: String, modifier: Modifier = Modifier,
+    name: String,
+    rating: Double,
+    IsOpen: Boolean,
+    location: String,
+    modifier: Modifier = Modifier,
+    onCardClick: () -> Unit = {},
     onCallNow: () -> Unit = {},
-    onBookAppointment: () -> Unit = {},reviews :Int
+    onBookAppointment: () -> Unit = {},
+    reviews: Int
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp), shape = RoundedCornerShape(12.dp),
-        elevation = 6.dp
+            .padding(horizontal = 4.dp, vertical = 4.dp)
+            .clickable { onCardClick() }, // الكارد نفسه قابل للضغط
+        shape = RoundedCornerShape(12.dp),
+        elevation = 6.dp,
+        backgroundColor = colorResource(id = R.color.white)
     ) {
-        Column(
-            modifier = Modifier
-                .padding(12.dp)
-                .background(color = colorResource(id = R.color.white))
-        ) {
-            Row(modifier = Modifier.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.padding(12.dp)) {
+
+            // الجزء العلوي: Logo + اسم الكلينك + الحالة
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     modifier = Modifier
                         .size(72.dp)
@@ -298,46 +319,66 @@ fun CardOfClinics(
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(name, style = MaterialTheme.typography.h6)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            name,
+                            style = MaterialTheme.typography.h6,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = if (IsOpen) "Open" else "Close",
+                        color = if (IsOpen) Color(0xFF4CAF50) else Color.Red,
+                        style = MaterialTheme.typography.body2
+                    )
                 }
-
-                Text(
-                    text = if (IsOpen) "Open" else "Close",
-                    color = if (IsOpen) Color(0xFF4CAF50) else Color.Red,
-                    style = MaterialTheme.typography.body2
-                )
             }
+
             Spacer(modifier = Modifier.height(8.dp))
+
+            // Rating
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Star,   contentDescription = "Rating", tint = Color(0xFFFFC107))
+                Icon(Icons.Default.Star, contentDescription = "Rating", tint = Color(0xFFFFC107))
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("$rating ($reviews reviews)", style = MaterialTheme.typography.body2)
             }
+
             Spacer(modifier = Modifier.height(8.dp))
+
+            // Location
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Place, contentDescription = "Location", tint = colorResource(id = R.color.primary_dark2))
+                Icon(
+                    Icons.Default.Place,
+                    contentDescription = "Location",
+                    tint = colorResource(id = R.color.primary_dark2)
+                )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(location, style = MaterialTheme.typography.body2)
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(modifier=Modifier.fillMaxWidth(), horizontalArrangement =Arrangement.SpaceBetween ) {
-                Button(
-                    onClick =  {onCallNow()},
-                    modifier=Modifier.weight(1f)
 
-                ) {
-                    Text("Call now")
-                }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // الأزرار الداخلية
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Button(
+                    onClick = { onCallNow() },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Call now", maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 Spacer(modifier = Modifier.width(8.dp))
                 OutlinedButton(
                     onClick = { onBookAppointment() },
                     modifier = Modifier.weight(1f)
-                ) {
-                    Text("Book appointment")
-                }
+                ) { Text("Book appointment", maxLines = 1, overflow = TextOverflow.Ellipsis) }
             }
         }
-
     }
 }
