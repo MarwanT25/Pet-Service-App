@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "696795309539",
+    "project_id": "petservicegradproject",
+    "storage_bucket": "petservicegradproject.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:696795309539:android:0424b6b5a65bff70d3ecd6",
+        "android_client_info": {
+          "package_name": "com.example.petservicetemp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhIxlW4QdLufPdAH4KirOZjHLv1fpOHm0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
