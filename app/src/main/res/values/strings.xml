@@ -2,4 +2,5 @@
     <string name="app_name">PetServiceTemp</string>
     <string name="title_activity_clinics_screen">ClinicsScreen</string>
     <string name="title_activity_clinic_details">ClinicDetails</string>
+    <string name="title_activity_booking_screen">BookingScreen</string>
 </resources>
