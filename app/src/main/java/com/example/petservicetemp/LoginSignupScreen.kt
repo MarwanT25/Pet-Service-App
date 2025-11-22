@@ -66,7 +66,6 @@ fun LoginSignupScreen(
     var numberOfPets by remember { mutableStateOf("") }
     var pets by remember { mutableStateOf(mutableListOf<Pet>()) }
 
-    val petTypes = listOf("Cat", "Dog")
 
     // Available services list
     val availableServices = listOf(
@@ -279,7 +278,6 @@ fun LoginSignupScreen(
                         UserPetCard(
                             pet = pet,
                             index = index,
-                            petTypes = petTypes,
                             onPetTypeChanged = { newType ->
                                 val updatedPets = pets.toMutableList()
                                 updatedPets[index] = pet.copy(petType = newType)
@@ -575,7 +573,6 @@ fun LoginSignupScreen(
 fun UserPetCard(
     pet: Pet,
     index: Int,
-    petTypes: List<String>,
     onPetTypeChanged: (String) -> Unit,
     onImageSelected: (Uri?) -> Unit,
     onBitmapLoaded: (android.graphics.Bitmap?) -> Unit,
@@ -616,33 +613,18 @@ fun UserPetCard(
             )
 
             // Pet Type Dropdown
-            Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = pet.petType,
-                    onValueChange = { },
-                    label = { Text("Pet Type") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { expanded = true },
-                    readOnly = true,
-                    placeholder = { Text("Select pet type") }
-                )
+            OutlinedTextField(
+                value = pet.petType,
+                onValueChange = { newType ->
+                    onPetTypeChanged(newType) // هيرجع التغيير للـ parent state
+                },
+                label = { Text("Pet Type") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                placeholder = { Text("Cat, Dog...") }
+            )
 
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    petTypes.forEach { type ->
-                        DropdownMenuItem(onClick = {
-                            onPetTypeChanged(type)
-                            expanded = false
-                        }) {
-                            Text(type)
-                        }
-                    }
-                }
-            }
+
 
             // Pet Image (Optional)
             Text(

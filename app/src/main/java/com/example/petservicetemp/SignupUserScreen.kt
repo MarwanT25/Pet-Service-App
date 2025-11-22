@@ -16,8 +16,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,9 +45,12 @@ data class Pet(
 
 @Composable
 fun SignupUserScreen(navController: NavHostController?) {
-    val primary = AppTheme.Primary
-    val primaryDark = AppTheme.PrimaryDark
-    val backgroundLight = AppTheme.BackgroundLight
+    // Colors using MaterialTheme.colors
+    val primary = MaterialTheme.colors.primary
+    val primaryDark = MaterialTheme.colors.primaryVariant
+    val backgroundLight = MaterialTheme.colors.background
+    val errorColor = MaterialTheme.colors.error
+
     val context = LocalContext.current
 
     var name by remember { mutableStateOf("") }
@@ -189,13 +191,14 @@ fun SignupUserScreen(navController: NavHostController?) {
                     if (nameError != null) {
                         Text(
                             text = nameError!!,
-                            color = MaterialTheme.colors.error,
+                            color = errorColor,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 4.dp, top = 4.dp)
                         )
                     }
                 }
             }
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -221,7 +224,7 @@ fun SignupUserScreen(navController: NavHostController?) {
                     if (phoneError != null) {
                         Text(
                             text = phoneError!!,
-                            color = MaterialTheme.colors.error,
+                            color = errorColor,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 4.dp, top = 4.dp)
                         )
@@ -252,7 +255,7 @@ fun SignupUserScreen(navController: NavHostController?) {
                     if (emailError != null) {
                         Text(
                             text = emailError!!,
-                            color = MaterialTheme.colors.error,
+                            color = errorColor,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 4.dp, top = 4.dp)
                         )
@@ -260,7 +263,6 @@ fun SignupUserScreen(navController: NavHostController?) {
                 }
             }
 
-            // Number of Pets
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -284,7 +286,6 @@ fun SignupUserScreen(navController: NavHostController?) {
                 )
             }
 
-            // Pets List - Using LazyColumn
             if (pets.isNotEmpty()) {
                 Text(
                     text = "Pet Information",
@@ -330,7 +331,6 @@ fun SignupUserScreen(navController: NavHostController?) {
 
             Button(
                 onClick = {
-                    // Validate all fields
                     val isNameValid = validateName()
                     val isPhoneValid = validatePhone()
                     val isEmailValid = validateEmail()
@@ -338,19 +338,15 @@ fun SignupUserScreen(navController: NavHostController?) {
                     val numberOfPetsValid = numberOfPets.isEmpty() || (numberOfPets.toIntOrNull() ?: 0) > 0
 
                     if (isNameValid && isPhoneValid && isEmailValid && numberOfPetsValid && petsValid) {
-                        // Show success feedback
                         Toast.makeText(
                             context,
                             "Account created successfully!",
                             Toast.LENGTH_LONG
                         ).show()
-
-                        // Navigate to clinics screen after signup
                         navController?.navigate("clinics") {
                             popUpTo("choose_account") { inclusive = true }
                         }
                     } else {
-                        // Show error feedback
                         Toast.makeText(
                             context,
                             "Please fill all required fields correctly",
@@ -398,7 +394,6 @@ fun PetCard(
         onImageSelected(uri)
     }
 
-    // Load bitmap when URI changes
     LaunchedEffect(pet.imageUri) {
         if (pet.imageUri != null) {
             val bitmap = loadBitmap(pet.imageUri!!)
@@ -423,7 +418,6 @@ fun PetCard(
                 color = primaryDark
             )
 
-            // Pet Type Dropdown
             Box(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = pet.petType,
@@ -461,7 +455,6 @@ fun PetCard(
                 }
             }
 
-            // Pet Image (Optional)
             Text(
                 text = "Pet Image (Optional)",
                 fontSize = 14.sp,
@@ -502,4 +495,3 @@ fun PetCard(
 fun SignupUserScreenPreview() {
     SignupUserScreen(navController = null)
 }
-

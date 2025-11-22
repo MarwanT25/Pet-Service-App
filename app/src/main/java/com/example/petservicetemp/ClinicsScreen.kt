@@ -1,14 +1,9 @@
 package com.example.petservicetemp
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
-import androidx.navigation.compose.rememberNavController
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -24,25 +19,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import com.example.petservicetemp.ui.theme.PetServiceTempTheme
-import java.sql.DriverManager.println
-import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
-import android.content.Context
-import java.net.URLEncoder
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavHostController
-import android.content.Intent
-import android.net.Uri
+import com.example.petservicetemp.ui.theme.PetServiceTempTheme
+import java.net.URLEncoder
 
 
 
@@ -321,7 +307,20 @@ fun ClinicScreen(navController: NavHostController? = null) {
                     icon = { Icon(Icons.Default.Map, contentDescription = "Map") },
                     label = { Text("Map") },
                     selected = selectedItem == "Map",
-                    onClick = { selectedItem = "Map" },
+                    onClick = {
+                        selectedItem = "Map"
+                        // فتح تطبيق Google Maps
+                        val gmmIntentUri = Uri.parse("geo:0,0?q=pet+clinics")
+                        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                        mapIntent.setPackage("com.google.android.apps.maps")
+                        try {
+                            context.startActivity(mapIntent)
+                        } catch (e: Exception) {
+                            // إذا لم يكن Google Maps مثبتاً، افتح المتصفح
+                            val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/pet+clinics"))
+                            context.startActivity(webIntent)
+                        }
+                    },
                     selectedContentColor = Color.White,
                     unselectedContentColor = unselectedColor
                 )

@@ -3,4 +3,5 @@
     <string name="title_activity_clinics_screen">ClinicsScreen</string>
     <string name="title_activity_clinic_details">ClinicDetails</string>
     <string name="title_activity_booking_screen">BookingScreen</string>
+    <string name="title_activity_maps_screen">MapsScreen</string>
 </resources>

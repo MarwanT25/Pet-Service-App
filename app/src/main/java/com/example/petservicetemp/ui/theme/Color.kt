@@ -20,3 +20,25 @@ val Purple200 = Color(0xFFBB86FC)
 val Purple500 = Color(0xFF6200EE)
 val Purple700 = Color(0xFF3700B3)
 val Teal200 = Color(0xFF03DAC5)
+
+// Color Map
+val ColorMap = mapOf(
+    // Unified Theme Colors
+    "Primary" to Primary,
+    "PrimaryDark" to PrimaryDark,
+    "PrimaryVariant" to PrimaryVariant,
+    "BackgroundLight" to BackgroundLight,
+    "Secondary" to Secondary,
+    
+    // Status Colors
+    "StatusPending" to StatusPending,
+    "StatusConfirmed" to StatusConfirmed,
+    "StatusCompleted" to StatusCompleted,
+    "StatusCancelled" to StatusCancelled,
+    
+    // Legacy colors
+    "Purple200" to Purple200,
+    "Purple500" to Purple500,
+    "Purple700" to Purple700,
+    "Teal200" to Teal200
+)

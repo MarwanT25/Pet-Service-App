@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -206,8 +208,104 @@ fun ClinicBody(
                         }
                     }
                     1 -> {
-                        Text("Reviews will appear here...", color = Color.Gray)
+                        var reviewText by remember { mutableStateOf("") }
+                        var isWritingReview by remember { mutableStateOf(false) }
+                        val reviews = remember { mutableStateListOf<String>() } // List of existing reviews
+                        val primary = Color(0xFF819067)
+                        val primaryDark = Color(0xFF404C35)
+
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // TextField للكتابة
+                            item {
+                                OutlinedTextField(
+                                    value = reviewText,
+                                    onValueChange = {
+                                        reviewText = it
+                                        isWritingReview = it.isNotEmpty() // يظهر الزرارين لما المستخدم يبدأ يكتب
+                                    },
+                                    label = { Text("Write your review") },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(120.dp),
+                                    placeholder = { Text("Type your review here...") },
+                                    maxLines = 5,
+                                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                                        focusedBorderColor = primary,
+                                        cursorColor = primaryDark
+                                    )
+                                )
+                            }
+
+                            // Row للزرارين Add & Cancel
+                            if (isWritingReview) {
+                                item {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                reviews.add(reviewText)  // اضيف الـ review للقائمة
+                                                reviewText = ""          // فرغ الـ text field
+                                                isWritingReview = false
+                                            },
+                                            modifier = Modifier.padding(end = 8.dp),
+                                            colors = ButtonDefaults.buttonColors(backgroundColor = primary)
+                                        ) {
+                                            Text("Add Review", color = Color.White)
+                                        }
+
+                                        Button(
+                                            onClick = {
+                                                reviewText = ""          // امسح النص
+                                                isWritingReview = false  // رجع الحالة للـ default
+                                            },
+                                            colors = ButtonDefaults.buttonColors(backgroundColor = Color.Gray)
+                                        ) {
+                                            Text("Cancel", color = Color.White)
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Spacer
+                            item {
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            // قائمة الـ reviews
+                            if (reviews.isEmpty()) {
+                                item {
+                                    Text(
+                                        "No reviews yet.",
+                                        color = Color.Gray,
+                                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                                    )
+                                }
+                            } else {
+                                items(reviews) { review ->
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        elevation = 4.dp,
+                                        backgroundColor = Color.White
+                                    ) {
+                                        Text(
+                                            review,
+                                            modifier = Modifier.padding(12.dp),
+                                            color = primaryDark
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
+
                 }
             }
         }
