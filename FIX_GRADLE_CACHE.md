@@ -37,3 +37,4 @@ rmdir /s /q "%USERPROFILE%\.gradle\caches"
 2. تحديث Gradle wrapper
 3. حذف مجلد `.gradle` في المشروع
 
+

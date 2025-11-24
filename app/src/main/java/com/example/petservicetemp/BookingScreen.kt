@@ -137,7 +137,7 @@ fun BookingScreenStyled(
                     elevation = 6.dp
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("🛎️ Select Service:", fontWeight = FontWeight.Bold)
+                        Text("🛎Select Service:", fontWeight = FontWeight.Bold)
                         val services = listOf("Grooming", "Checkup", "Vaccine")
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(services.size) { index ->
@@ -162,7 +162,7 @@ fun BookingScreenStyled(
                     elevation = 6.dp
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("📅 Select Date:", fontWeight = FontWeight.Bold)
+                        Text("Select Date:", fontWeight = FontWeight.Bold)
 
                         OutlinedButton(
                             onClick = {
@@ -205,7 +205,7 @@ fun BookingScreenStyled(
                     elevation = 6.dp
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("⏰ Select Time:", fontWeight = FontWeight.Bold)
+                        Text("Select Time:", fontWeight = FontWeight.Bold)
 
                         OutlinedButton(
                             onClick = {
@@ -254,7 +254,7 @@ fun BookingScreenStyled(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("📝 Notes (optional)") },
+                    label = { Text("Notes (optional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
 

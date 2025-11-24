@@ -9,9 +9,9 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/icons"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@drawable/icons"
         android:supportsRtl="true"
         android:theme="@style/Theme.PetServiceTemp"
         tools:targetApi="31">
@@ -30,10 +30,6 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="YOUR_API_KEY" />
 
-        <activity
-            android:name=".MapsScreen"
-            android:exported="false"
-            android:label="@string/title_activity_maps_screen" />
 
         <activity
             android:name=".BookingScreen"

@@ -54,11 +54,6 @@ fun ClinicHomeScreen(
                 title = { Text("Home", textAlign = TextAlign.Center) },
                 backgroundColor = primary,
                 contentColor = Color.White,
-                navigationIcon = {
-                    IconButton(onClick = { navController?.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                    }
-                },
                 actions = {
                     IconButton(onClick = {
                         val encodedName = java.net.URLEncoder.encode(clinicName, "UTF-8")

@@ -57,6 +57,9 @@ fun ClinicScreen(navController: NavHostController? = null) {
     val backgroundLight = Color(0xFFF8F8F8)
     val context = LocalContext.current
 
+    // State لإدارة التبويب النشط
+    var selectedTab by remember { mutableStateOf(0) }
+
     val menuModifier = Modifier
         .background(color = primary, shape = RoundedCornerShape(16.dp))
         .border(2.dp, primaryDark, RoundedCornerShape(16.dp))
@@ -74,7 +77,7 @@ fun ClinicScreen(navController: NavHostController? = null) {
         mutableStateListOf<Clinic>().apply { addAll(clinicList) }
     }
 
-    // State for filters and search
+    // State for filters and search (لتبويب العيادات فقط)
     var searchQuery by remember { mutableStateOf("") }
     var selectedRatingFilter by remember { mutableStateOf<String?>(null) }
     var selectedServiceFilter by remember { mutableStateOf<String?>(null) }
@@ -111,194 +114,256 @@ fun ClinicScreen(navController: NavHostController? = null) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Clinics", textAlign = TextAlign.Center) },
+                title = {
+                    Text(
+                        when (selectedTab) {
+                            0 -> "Clinics"
+                            1 -> "Schedule"
+                            2 -> "Map"
+                            else -> "Clinics"
+                        },
+                        textAlign = TextAlign.Center
+                    )
+                },
                 backgroundColor = primary,
-                contentColor = Color.White
+                contentColor = Color.White,
+                actions = {
+                    // زر البروفايل في ال App Bar
+                    IconButton(
+                        onClick = {
+                            navController?.navigate("user_profile")
+                        }
+                    ) {
+                        Icon(Icons.Default.Person, contentDescription = "Profile", tint = Color.White)
+                    }
+                }
             )
         },
         content = { padding ->
-            Column(modifier = Modifier.padding(padding)) {
-                // Filters & Search
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    var ratingExpanded by remember { mutableStateOf(false) }
-                    var expanded by remember { mutableStateOf(false) }
-                    var serviceExpanded by remember { mutableStateOf(false) }
+            // نعرض المحتوى بناءً على التبويب النشط
+            when (selectedTab) {
+                0 -> { // Clinics Tab
+                    Column(modifier = Modifier.padding(padding)) {
+                        // Filters & Search
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            var ratingExpanded by remember { mutableStateOf(false) }
+                            var expanded by remember { mutableStateOf(false) }
+                            var serviceExpanded by remember { mutableStateOf(false) }
 
-                    IconButton(onClick = { expanded = !expanded }) {
-                        Icon(Icons.Filled.FilterList, contentDescription = "Filter", tint = secondary)
-                    }
-
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
-                        modifier = menuModifier
-                    ) {
-                        DropdownMenuItem(onClick = {
-                            selectedNearbyFilter = !selectedNearbyFilter
-                            expanded = false
-                        }) {
-                            Text(if (selectedNearbyFilter) "✓ Nearby me" else "Nearby me")
-                        }
-                        DropdownMenuItem(onClick = {
-                            ratingExpanded = !ratingExpanded
-                        }) {
-                            Text("Rating")
-                        }
-                        DropdownMenuItem(onClick = {
-                            serviceExpanded = !serviceExpanded
-                        }) {
-                            Text("Service")
-                        }
-                        DropdownMenuItem(onClick = {
-                            selectedRatingFilter = null
-                            selectedServiceFilter = null
-                            selectedNearbyFilter = false
-                            expanded = false
-                        }) {
-                            Text("Clear Filters")
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = ratingExpanded,
-                        onDismissRequest = { ratingExpanded = false },
-                        offset = DpOffset(x = 120.dp, y = 0.dp),
-                        modifier = menuModifier
-                    ) {
-                        DropdownMenuItem(onClick = {
-                            selectedRatingFilter = "High to Low"
-                            ratingExpanded = false
-                            expanded = false
-                        }) {
-                            Text(if (selectedRatingFilter == "High to Low") "✓ High to Low" else "High to Low")
-                        }
-                        DropdownMenuItem(onClick = {
-                            selectedRatingFilter = "Low to High"
-                            ratingExpanded = false
-                            expanded = false
-                        }) {
-                            Text(if (selectedRatingFilter == "Low to High") "✓ Low to High" else "Low to High")
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = serviceExpanded,
-                        onDismissRequest = { serviceExpanded = false },
-                        offset = DpOffset(x = 120.dp, y = 80.dp),
-                        modifier = menuModifier
-                    ) {
-                        DropdownMenuItem(onClick = {
-                            selectedServiceFilter = "Basic Care"
-                            serviceExpanded = false
-                            expanded = false
-                        }) {
-                            Text(if (selectedServiceFilter == "Basic Care") "✓ Basic Care" else "Basic Care")
-                        }
-                        DropdownMenuItem(onClick = {
-                            selectedServiceFilter = "Grooming Services"
-                            serviceExpanded = false
-                            expanded = false
-                        }) {
-                            Text(if (selectedServiceFilter == "Grooming Services") "✓ Grooming Services" else "Grooming Services")
-                        }
-                        DropdownMenuItem(onClick = {
-                            selectedServiceFilter = "Boarding & Daycare"
-                            serviceExpanded = false
-                            expanded = false
-                        }) {
-                            Text(if (selectedServiceFilter == "Boarding & Daycare") "✓ Boarding & Daycare" else "Boarding & Daycare")
-                        }
-                        DropdownMenuItem(onClick = {
-                            selectedServiceFilter = "Medical & Surgical Care"
-                            serviceExpanded = false
-                            expanded = false
-                        }) {
-                            Text(if (selectedServiceFilter == "Medical & Surgical Care") "✓ Medical & Surgical Care" else "Medical & Surgical Care")
-                        }
-                    }
-
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search...") },
-                        modifier = Modifier.weight(1f).padding(end = 4.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        singleLine = true,
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            backgroundColor = Color.White,
-                            focusedBorderColor = primaryDark,
-                            unfocusedBorderColor = secondary
-                        ),
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon", tint = secondary) }
-                    )
-                }
-
-                // 3️⃣ List of Cards
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(filteredClinics.size) { index ->
-                        val clinic = filteredClinics[index]
-                        CardOfClinics(
-                            clinic = clinic,
-                            onCardClick = {
-                                val encodedName = URLEncoder.encode(clinic.name, "UTF-8")
-                                val encodedLocation = URLEncoder.encode(clinic.location, "UTF-8")
-                                val encodedPhone = URLEncoder.encode(clinic.phoneNumber, "UTF-8")
-                                navController?.navigate(
-                                    "clinic_details/$encodedName/${clinic.rating}/${clinic.isOpen}/$encodedLocation/${clinic.reviews}/$encodedPhone"
-                                )
-                            },
-                            onCallNow = {
-                                val intent = Intent(Intent.ACTION_DIAL).apply {
-                                    data = Uri.parse("tel:${clinic.phoneNumber}")
-                                }
-                                context.startActivity(intent)
-                            },
-                            onBookAppointment = {
-                                val encodedName = URLEncoder.encode(clinic.name, "UTF-8")
-                                val encodedLocation = URLEncoder.encode(clinic.location, "UTF-8")
-                                val encodedPhone = URLEncoder.encode(clinic.phoneNumber, "UTF-8")
-                                navController?.navigate("clinic_details/$encodedName/${clinic.rating}/${clinic.isOpen}/$encodedLocation/${clinic.reviews}/$encodedPhone")
+                            IconButton(onClick = { expanded = !expanded }) {
+                                Icon(Icons.Filled.FilterList, contentDescription = "Filter", tint = secondary)
                             }
-                        )
+
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false },
+                                modifier = menuModifier
+                            ) {
+                                DropdownMenuItem(onClick = {
+                                    selectedNearbyFilter = !selectedNearbyFilter
+                                    expanded = false
+                                }) {
+                                    Text(if (selectedNearbyFilter) "✓ Nearby me" else "Nearby me")
+                                }
+                                DropdownMenuItem(onClick = {
+                                    ratingExpanded = !ratingExpanded
+                                }) {
+                                    Text("Rating")
+                                }
+                                DropdownMenuItem(onClick = {
+                                    serviceExpanded = !serviceExpanded
+                                }) {
+                                    Text("Service")
+                                }
+                                DropdownMenuItem(onClick = {
+                                    selectedRatingFilter = null
+                                    selectedServiceFilter = null
+                                    selectedNearbyFilter = false
+                                    expanded = false
+                                }) {
+                                    Text("Clear Filters")
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = ratingExpanded,
+                                onDismissRequest = { ratingExpanded = false },
+                                offset = DpOffset(x = 120.dp, y = 0.dp),
+                                modifier = menuModifier
+                            ) {
+                                DropdownMenuItem(onClick = {
+                                    selectedRatingFilter = "High to Low"
+                                    ratingExpanded = false
+                                    expanded = false
+                                }) {
+                                    Text(if (selectedRatingFilter == "High to Low") "✓ High to Low" else "High to Low")
+                                }
+                                DropdownMenuItem(onClick = {
+                                    selectedRatingFilter = "Low to High"
+                                    ratingExpanded = false
+                                    expanded = false
+                                }) {
+                                    Text(if (selectedRatingFilter == "Low to High") "✓ Low to High" else "Low to High")
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = serviceExpanded,
+                                onDismissRequest = { serviceExpanded = false },
+                                offset = DpOffset(x = 120.dp, y = 80.dp),
+                                modifier = menuModifier
+                            ) {
+                                DropdownMenuItem(onClick = {
+                                    selectedServiceFilter = "Basic Care"
+                                    serviceExpanded = false
+                                    expanded = false
+                                }) {
+                                    Text(if (selectedServiceFilter == "Basic Care") "✓ Basic Care" else "Basic Care")
+                                }
+                                DropdownMenuItem(onClick = {
+                                    selectedServiceFilter = "Grooming Services"
+                                    serviceExpanded = false
+                                    expanded = false
+                                }) {
+                                    Text(if (selectedServiceFilter == "Grooming Services") "✓ Grooming Services" else "Grooming Services")
+                                }
+                                DropdownMenuItem(onClick = {
+                                    selectedServiceFilter = "Boarding & Daycare"
+                                    serviceExpanded = false
+                                    expanded = false
+                                }) {
+                                    Text(if (selectedServiceFilter == "Boarding & Daycare") "✓ Boarding & Daycare" else "Boarding & Daycare")
+                                }
+                                DropdownMenuItem(onClick = {
+                                    selectedServiceFilter = "Medical & Surgical Care"
+                                    serviceExpanded = false
+                                    expanded = false
+                                }) {
+                                    Text(if (selectedServiceFilter == "Medical & Surgical Care") "✓ Medical & Surgical Care" else "Medical & Surgical Care")
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = { Text("Search...") },
+                                modifier = Modifier.weight(1f).padding(end = 4.dp),
+                                shape = RoundedCornerShape(20.dp),
+                                singleLine = true,
+                                colors = TextFieldDefaults.outlinedTextFieldColors(
+                                    backgroundColor = Color.White,
+                                    focusedBorderColor = primaryDark,
+                                    unfocusedBorderColor = secondary
+                                ),
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon", tint = secondary) }
+                            )
+                        }
+
+                        // 3️⃣ List of Cards
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize().padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(filteredClinics.size) { index ->
+                                val clinic = filteredClinics[index]
+                                CardOfClinics(
+                                    clinic = clinic,
+                                    onCardClick = {
+                                        val encodedName = URLEncoder.encode(clinic.name, "UTF-8")
+                                        val encodedLocation = URLEncoder.encode(clinic.location, "UTF-8")
+                                        val encodedPhone = URLEncoder.encode(clinic.phoneNumber, "UTF-8")
+                                        navController?.navigate(
+                                            "clinic_details/$encodedName/${clinic.rating}/${clinic.isOpen}/$encodedLocation/${clinic.reviews}/$encodedPhone"
+                                        )
+                                    },
+                                    onCallNow = {
+                                        val intent = Intent(Intent.ACTION_DIAL).apply {
+                                            data = Uri.parse("tel:${clinic.phoneNumber}")
+                                        }
+                                        context.startActivity(intent)
+                                    },
+                                    onBookAppointment = {
+                                        val encodedName = URLEncoder.encode(clinic.name, "UTF-8")
+                                        val encodedLocation = URLEncoder.encode(clinic.location, "UTF-8")
+                                        val encodedPhone = URLEncoder.encode(clinic.phoneNumber, "UTF-8")
+                                        navController?.navigate("clinic_details/$encodedName/${clinic.rating}/${clinic.isOpen}/$encodedLocation/${clinic.reviews}/$encodedPhone")
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                1 -> { // Schedule Tab - UserHomeScreen
+                    UserHomeScreen(navController = navController)
+                }
+                2 -> { // Map Tab
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Map,
+                                contentDescription = "Map",
+                                tint = primary,
+                                modifier = Modifier.size(64.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                "Find Clinics Near You",
+                                style = MaterialTheme.typography.h5,
+                                color = primaryDark
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = {
+                                    // فتح تطبيق Google Maps
+                                    val gmmIntentUri = Uri.parse("geo:0,0?q=pet+clinics")
+                                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                                    mapIntent.setPackage("com.google.android.apps.maps")
+                                    try {
+                                        context.startActivity(mapIntent)
+                                    } catch (e: Exception) {
+                                        val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/pet+clinics"))
+                                        context.startActivity(webIntent)
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(backgroundColor = primary),
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                Text("Open Maps", color = Color.White)
+                            }
+                        }
                     }
                 }
             }
         },
         bottomBar = {
             BottomNavigation(backgroundColor = primary, contentColor = Color.White) {
-                var selectedItem by remember { mutableStateOf("Clinics") }
                 val unselectedColor = primaryDark
 
                 BottomNavigationItem(
                     icon = { Icon(Icons.Default.LocalHospital, contentDescription = "Clinics") },
                     label = { Text("Clinics") },
-                    selected = selectedItem == "Clinics",
-                    onClick = {
-                        selectedItem = "Clinics"
-                        navController?.navigate("clinics") {
-                            popUpTo("clinics") { inclusive = false }
-                        }
-                    },
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
                     selectedContentColor = Color.White,
                     unselectedContentColor = unselectedColor
                 )
 
                 BottomNavigationItem(
-                    icon = { Icon(Icons.Default.CalendarMonth, contentDescription = "schedule") },
+                    icon = { Icon(Icons.Default.CalendarMonth, contentDescription = "Schedule") },
                     label = { Text("Schedule") },
-                    selected = selectedItem == "Schedule",
-                    onClick = {
-                        selectedItem = "Schedule"
-                        navController?.navigate("user_home") {
-                            popUpTo("clinics") { inclusive = false }
-                        }
-                    },
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
                     selectedContentColor = Color.White,
                     unselectedContentColor = unselectedColor
                 )
@@ -306,35 +371,8 @@ fun ClinicScreen(navController: NavHostController? = null) {
                 BottomNavigationItem(
                     icon = { Icon(Icons.Default.Map, contentDescription = "Map") },
                     label = { Text("Map") },
-                    selected = selectedItem == "Map",
-                    onClick = {
-                        selectedItem = "Map"
-                        // فتح تطبيق Google Maps
-                        val gmmIntentUri = Uri.parse("geo:0,0?q=pet+clinics")
-                        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-                        mapIntent.setPackage("com.google.android.apps.maps")
-                        try {
-                            context.startActivity(mapIntent)
-                        } catch (e: Exception) {
-                            // إذا لم يكن Google Maps مثبتاً، افتح المتصفح
-                            val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/pet+clinics"))
-                            context.startActivity(webIntent)
-                        }
-                    },
-                    selectedContentColor = Color.White,
-                    unselectedContentColor = unselectedColor
-                )
-
-                BottomNavigationItem(
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-                    label = { Text("Profile") },
-                    selected = selectedItem == "Profile",
-                    onClick = {
-                        selectedItem = "Profile"
-                        navController?.navigate("user_profile") {
-                            popUpTo("clinics") { inclusive = false }
-                        }
-                    },
+                    selected = selectedTab == 2,
+                    onClick = { selectedTab = 2 },
                     selectedContentColor = Color.White,
                     unselectedContentColor = unselectedColor
                 )
@@ -342,8 +380,6 @@ fun ClinicScreen(navController: NavHostController? = null) {
         }
     )
 }
-
-
 @Composable
 fun CardOfClinics(
     clinic: Clinic,
