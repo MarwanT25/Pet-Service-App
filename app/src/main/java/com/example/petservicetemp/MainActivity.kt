@@ -1,6 +1,7 @@
 package com.example.petservicetemp
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,15 +15,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.petservicetemp.ui.theme.PetServiceTempTheme
-import java.net.URLDecoder
 import com.google.firebase.FirebaseApp
-
+import com.google.firebase.firestore.FirebaseFirestore
+import java.net.URLDecoder
+import java.util.*
+import android.os.Handler
+import android.os.Looper
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        FirebaseApp.initializeApp(this)
-
+        // اختبر اتصال Firebase
+       // testFirebaseConnection()
 
         setContent {
             PetServiceTempTheme {
@@ -33,6 +37,52 @@ class MainActivity : ComponentActivity() {
                     Navigation()
                 }
             }
+        }
+    }
+   private fun testFirebaseConnection() {
+        try {
+            Log.d("FIREBASE_TEST", "🚀 بدء اختبار اتصال Firebase...")
+
+            // الطريقة 1: استخدمي getInstance مباشرة
+            try {
+                val db = FirebaseFirestore.getInstance()
+                Log.d("FIREBASE_TEST", "✅ نجاح - Firestore instance created")
+
+                // اختبر عملية بسيطة
+                db.collection("test").document("quick_test")
+                    .set(hashMapOf("timestamp" to System.currentTimeMillis()))
+                    .addOnSuccessListener {
+                        Log.d("FIREBASE_TEST", "🎉 نجاح كتابة البيانات!")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("FIREBASE_TEST", "❌ فشل الكتابة: ${e.message}")
+                    }
+
+            } catch (e: Exception) {
+                Log.e("FIREBASE_TEST", "❌ فشل الطريقة 1: ${e.message}")
+
+                // الطريقة 2: استخدمي initializeApp يدوياً
+                try {
+                    Log.d("FIREBASE_TEST", "🔧 جرب الطريقة 2: التهيئة اليدوية...")
+                    FirebaseApp.initializeApp(this)
+
+                    // انتظري قليلاً ثم جربي مرة أخرى
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        try {
+                            val db2 = FirebaseFirestore.getInstance()
+                            Log.d("FIREBASE_TEST", "✅ نجاح الطريقة 2 - Firestore instance created")
+                        } catch (e2: Exception) {
+                            Log.e("FIREBASE_TEST", "❌ فشل الطريقة 2: ${e2.message}")
+                        }
+                    }, 1000)
+
+                } catch (e2: Exception) {
+                    Log.e("FIREBASE_TEST", "💥 فشل كامل: ${e2.message}")
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e("FIREBASE_TEST", "💥 خطأ عام: ${e.message}")
         }
     }
 }
@@ -48,7 +98,6 @@ fun Navigation() {
         composable("choose_account") {
             ChooseAccountTypeScreen(navController = navController)
         }
-
         composable(
             route = "login_signup/{accountType}",
             arguments = listOf(
@@ -58,20 +107,15 @@ fun Navigation() {
             val accountType = backStackEntry.arguments?.getString("accountType") ?: "user"
             LoginSignupScreen(accountType = accountType, navController = navController)
         }
-
         composable("signup_clinic") {
             SignupClinicScreen(navController = navController)
         }
-
         composable("signup_user") {
             SignupUserScreen(navController = navController)
         }
-
-        // --- CHANGE 1: Point this to the LIST screen ---
         composable("clinics") {
-            ClinicsScreen(navController = navController)
+            ClinicScreen(navController = navController)
         }
-
         composable(
             route = "booking/{clinicName}/{rating}/{isOpen}/{location}/{reviews}/{phoneNumber}",
             arguments = listOf(
@@ -100,7 +144,6 @@ fun Navigation() {
                 navController = navController
             )
         }
-
         composable(
             route = "clinic_home/{clinicName}",
             arguments = listOf(
@@ -110,7 +153,6 @@ fun Navigation() {
             val clinicName = URLDecoder.decode(backStackEntry.arguments?.getString("clinicName") ?: "Clinic", "UTF-8")
             ClinicHomeScreen(clinicName = clinicName, navController = navController)
         }
-
         composable(
             route = "clinic_profile/{clinicName}",
             arguments = listOf(
@@ -120,7 +162,6 @@ fun Navigation() {
             val clinicName = URLDecoder.decode(backStackEntry.arguments?.getString("clinicName") ?: "Clinic", "UTF-8")
             ClinicProfileScreen(clinicName = clinicName, navController = navController)
         }
-
         composable(
             route = "clinic_details/{clinicName}/{rating}/{isOpen}/{location}/{reviews}/{phoneNumber}",
             arguments = listOf(
@@ -140,22 +181,25 @@ fun Navigation() {
             val phoneNumber = URLDecoder.decode(backStackEntry.arguments?.getString("phoneNumber") ?: "", "UTF-8")
 
             val clinic = Clinic(
+                id = UUID.randomUUID().toString(),
                 name = clinicName,
+                email = "",
+                phoneNumber = phoneNumber,
+                location = location,
+                workingHours = "",
+                logoBase64 = "",
+                licenseBase64 = "",
+                password = "",
+                services = emptyList(),
                 rating = rating.toDouble(),
                 isOpen = isOpen,
-                location = location,
-                reviews = reviews,
-                phoneNumber = phoneNumber,
-                logoUrl = "",
-                licenseUrl = ""
+                reviews = reviews
             )
             ClinicDetailsScreen(clinic = clinic, navController = navController)
         }
-
         composable("user_profile") {
             UserProfileScreen(navController = navController)
         }
-
         composable("user_home") {
             UserHomeScreen(navController = navController)
         }
