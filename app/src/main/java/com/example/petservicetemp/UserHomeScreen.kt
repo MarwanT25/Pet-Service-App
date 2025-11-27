@@ -75,22 +75,6 @@ fun UserHomeScreen(navController: NavHostController?) {
     val availableDates = userBookings.map { it.date }.distinct()
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("My Appointments", textAlign = TextAlign.Center) },
-                backgroundColor = primary,
-                contentColor = Color.White,
-                navigationIcon = {
-                    IconButton(onClick = {
-                        navController?.navigate("clinics") {
-                            popUpTo("user_home") { inclusive = true }
-                        }
-                    }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                    }
-                }
-            )
-        },
         backgroundColor = backgroundLight
     ) { innerPadding ->
         Column(

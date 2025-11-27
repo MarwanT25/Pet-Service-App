@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*
 
 class BookingScreen : ComponentActivity() {
@@ -53,6 +54,7 @@ fun BookingScreenStyled(
     val primary = Color(0xFF819067)
     val primaryDark = Color(0xFF404C35)
     val backgroundLight = Color(0xFFF8F8F8)
+    val db = FirebaseFirestore.getInstance()
 
     var selectedService by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf("") }
@@ -137,7 +139,7 @@ fun BookingScreenStyled(
                     elevation = 6.dp
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("🛎️ Select Service:", fontWeight = FontWeight.Bold)
+                        Text("🛎Select Service:", fontWeight = FontWeight.Bold)
                         val services = listOf("Grooming", "Checkup", "Vaccine")
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(services.size) { index ->
@@ -162,7 +164,7 @@ fun BookingScreenStyled(
                     elevation = 6.dp
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("📅 Select Date:", fontWeight = FontWeight.Bold)
+                        Text("Select Date:", fontWeight = FontWeight.Bold)
 
                         OutlinedButton(
                             onClick = {
@@ -205,7 +207,7 @@ fun BookingScreenStyled(
                     elevation = 6.dp
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("⏰ Select Time:", fontWeight = FontWeight.Bold)
+                        Text("Select Time:", fontWeight = FontWeight.Bold)
 
                         OutlinedButton(
                             onClick = {
@@ -254,7 +256,7 @@ fun BookingScreenStyled(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("📝 Notes (optional)") },
+                    label = { Text("Notes (optional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
