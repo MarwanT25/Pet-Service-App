@@ -1,6 +1,7 @@
-package com.example.petservicetemp
+package com.example.petservicetemp.ui
 
 import android.os.Bundle
+
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -203,5 +204,3 @@ fun Navigation() {
         composable("user_home") {
             UserHomeScreen(navController = navController)
         }
-    }
-}
