@@ -1,4 +1,5 @@
 package com.example.petservicetemp
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -6,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -17,66 +20,69 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.petservicetemp.ui.theme.PetServiceTempTheme
-import com.example.petservicetemp.ui.theme.PetServiceTempTheme
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+
 
 class ClinicDetails : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            PetServiceTempTheme() {
-                Surface(
-                    modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
-                ) {
-                    ClinicAppBar()
-                }
+            Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF8F8F8)) {
+                ClinicAppBar()
             }
         }
     }
 }
 
-fun onBookAppointment() {
-    println("Booking for Clinic #")
+@Composable
+fun ClinicDetailsScreen(
+    clinic: Clinic,
+    navController: NavHostController
+) {
+    ClinicAppBar(clinic = clinic, navController = navController)
 }
 
 @Preview
 @Composable
-fun ClinicAppBar() {
+fun ClinicAppBar(
+    clinic: Clinic? = null,
+    navController: NavHostController? = null
+) {
     Scaffold(topBar = {
-        TopAppBar(title = {
-            Text(
-                text = "Clinic name", textAlign = TextAlign.Center
-            )
-        },
-            backgroundColor = colorResource(id = R.color.primary),
-            contentColor = colorResource(id = R.color.white),
+        TopAppBar(
+            title = { Text(clinic?.name ?: "Clinic name", textAlign = TextAlign.Center) },
+            backgroundColor = Color(0xFF819067), // primary
+            contentColor = Color.White,
             navigationIcon = {
-                IconButton(onClick = { /* Back action */ }) {
+                IconButton(onClick = { navController?.popBackStack() }) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                 }
             },
             actions = {
-                IconButton(onClick = { /* Favorite action */ }) {
-                    Icon(Icons.Default.Favorite, contentDescription = "Favorite")
-                }
-            })
+                IconButton(onClick = { }) { Icon(Icons.Default.Favorite, contentDescription = "Favorite") }
+            }
+        )
     }) { innerPadding ->
-        ClinicBody(modifier = Modifier.padding(innerPadding))
+        ClinicBody(clinic = clinic, navController = navController, modifier = Modifier.padding(innerPadding))
     }
 }
 
 @Composable
-fun ClinicBody(modifier: Modifier = Modifier) {
-
-    Column()
-    {
+fun ClinicBody(
+    clinic: Clinic? = null,
+    navController: NavHostController? = null,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxSize()) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -90,77 +96,52 @@ fun ClinicBody(modifier: Modifier = Modifier) {
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Logo
                 Box(
                     modifier = Modifier
-                        .size(50.dp) // ✅ صغرنا اللوجو
+                        .size(50.dp)
                         .clip(RoundedCornerShape(50.dp))
-                        .background(colorResource(id = R.color.primary)),
+                        .background(Color(0xFF819067)), // primary
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "LOGO",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
-                    )
+                    Text("LOGO", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                Column(
-                    modifier = Modifier.weight(1f) // ✅ يخلي النصوص تاخد المساحة و تبقى في النص
-                ) {
-                    // Name
-                    Text(
-                        text = "Clinic Name",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(clinic?.name ?: "Clinic Name", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                     Spacer(modifier = Modifier.height(4.dp))
-
-                    // Rating
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        repeat(5) { // ✅ بدل تكرار 5 Icons manually
-                            Icon(
-                                Icons.Default.Star,
-                                contentDescription = "Rating",
-                                tint = Color(0xFFFFC107),
-                                modifier = Modifier.size(14.dp) // ✅ صغرنا النجوم
-                            )
+                        repeat(5) {
+                            Icon(Icons.Default.Star, contentDescription = "Rating", tint = Color(0xFFFFC107), modifier = Modifier.size(14.dp))
                         }
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("5.0", fontSize = 12.sp)
+                        Text("${clinic?.rating ?: 5.0}", fontSize = 12.sp)
                     }
-
                     Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = "4 Specialities",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
+                    Text("${clinic?.reviews ?: 0} Reviews", fontSize = 12.sp, color = Color.Gray)
                 }
 
-                // Button
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Button(
-                    onClick = { onBookAppointment() },
+                    onClick = {
+                        clinic?.let {
+                            val encodedName = java.net.URLEncoder.encode(it.name, "UTF-8")
+                            val encodedLocation = java.net.URLEncoder.encode(it.location, "UTF-8")
+                            val encodedPhone = java.net.URLEncoder.encode(it.phoneNumber, "UTF-8")
+                            navController?.navigate(
+                                "booking/$encodedName/${it.rating}/${it.isOpen}/$encodedLocation/${it.reviews}/$encodedPhone"
+                            )
+                        }
+                    },
                     modifier = Modifier.height(40.dp)
-                    // ✅ fix height and align
                 ) {
-                    Text(
-                        "Book your appointment",
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Text("Book your appointment", fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
+
         var selectedTab by remember { mutableStateOf(0) }
         val tabs = listOf("About", "Reviews")
 
@@ -172,8 +153,6 @@ fun ClinicBody(modifier: Modifier = Modifier) {
             elevation = 6.dp
         ) {
             Column(modifier = Modifier.padding(8.dp)) {
-
-                // ✅ Custom Tabs
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -183,21 +162,14 @@ fun ClinicBody(modifier: Modifier = Modifier) {
                 ) {
                     tabs.forEachIndexed { index, title ->
                         val isSelected = selectedTab == index
-
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(4.dp)
                                 .height(40.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(
-                                    if (isSelected) Color(0xFF404C35) else Color.White
-                                )
-                                .border(
-                                    width = if (isSelected) 0.dp else 1.dp,
-                                    color = Color(0xFFCCCCCC),
-                                    shape = RoundedCornerShape(10.dp)
-                                )
+                                .background(if (isSelected) Color(0xFF404C35) else Color.White)
+                                .border(width = if (isSelected) 0.dp else 1.dp, color = Color(0xFFCCCCCC), shape = RoundedCornerShape(10.dp))
                                 .clickable { selectedTab = index },
                             contentAlignment = Alignment.Center
                         ) {
@@ -218,34 +190,124 @@ fun ClinicBody(modifier: Modifier = Modifier) {
                             Text("About Clinic", fontWeight = FontWeight.Bold)
                             Text("hjfjsrirsamamdfp9deuma.fmaespefjownflmfpskfoijkd[ksk")
                             Spacer(modifier = Modifier.height(8.dp))
-
                             Divider(); Spacer(modifier = Modifier.height(8.dp))
                             Text("Working Hours", fontWeight = FontWeight.Bold)
                             Text("Open from 9am to 8pm")
                             Spacer(modifier = Modifier.height(8.dp))
-
                             Divider(); Spacer(modifier = Modifier.height(8.dp))
                             Text("Location", fontWeight = FontWeight.Bold)
-                            Text("City: Cairo — show in GPS")
+                            Text("City: ${clinic?.location ?: "Cairo"} — show in GPS")
                             Spacer(modifier = Modifier.height(8.dp))
-
                             Divider(); Spacer(modifier = Modifier.height(8.dp))
                             Text("Contacts", fontWeight = FontWeight.Bold)
-                            Text("Phone, Instagram, Facebook")
+                            Text("Phone: ${clinic?.phoneNumber ?: "N/A"}, Instagram, Facebook")
                             Spacer(modifier = Modifier.height(8.dp))
-
                             Divider(); Spacer(modifier = Modifier.height(8.dp))
                             Text("Services", fontWeight = FontWeight.Bold)
                             Text("Grooming...")
                         }
                     }
-
                     1 -> {
-                        Text("Reviews will appear here...", color = Color.Gray)
+                        var reviewText by remember { mutableStateOf("") }
+                        var isWritingReview by remember { mutableStateOf(false) }
+                        val reviews = remember { mutableStateListOf<String>() } // List of existing reviews
+                        val primary = Color(0xFF819067)
+                        val primaryDark = Color(0xFF404C35)
+
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // TextField للكتابة
+                            item {
+                                OutlinedTextField(
+                                    value = reviewText,
+                                    onValueChange = {
+                                        reviewText = it
+                                        isWritingReview = it.isNotEmpty() // يظهر الزرارين لما المستخدم يبدأ يكتب
+                                    },
+                                    label = { Text("Write your review") },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(120.dp),
+                                    placeholder = { Text("Type your review here...") },
+                                    maxLines = 5,
+                                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                                        focusedBorderColor = primary,
+                                        cursorColor = primaryDark
+                                    )
+                                )
+                            }
+
+                            // Row للزرارين Add & Cancel
+                            if (isWritingReview) {
+                                item {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                reviews.add(reviewText)  // اضيف الـ review للقائمة
+                                                reviewText = ""          // فرغ الـ text field
+                                                isWritingReview = false
+                                            },
+                                            modifier = Modifier.padding(end = 8.dp),
+                                            colors = ButtonDefaults.buttonColors(backgroundColor = primary)
+                                        ) {
+                                            Text("Add Review", color = Color.White)
+                                        }
+
+                                        Button(
+                                            onClick = {
+                                                reviewText = ""          // امسح النص
+                                                isWritingReview = false  // رجع الحالة للـ default
+                                            },
+                                            colors = ButtonDefaults.buttonColors(backgroundColor = Color.Gray)
+                                        ) {
+                                            Text("Cancel", color = Color.White)
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Spacer
+                            item {
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            // قائمة الـ reviews
+                            if (reviews.isEmpty()) {
+                                item {
+                                    Text(
+                                        "No reviews yet.",
+                                        color = Color.Gray,
+                                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                                    )
+                                }
+                            } else {
+                                items(reviews) { review ->
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        elevation = 4.dp,
+                                        backgroundColor = Color.White
+                                    ) {
+                                        Text(
+                                            review,
+                                            modifier = Modifier.padding(12.dp),
+                                            color = primaryDark
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
+
                 }
             }
         }
-
     }
 }
