@@ -1,5 +1,4 @@
 package com.example.petservicetemp
-
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
@@ -14,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -27,6 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,6 +55,8 @@ fun LoginSignupScreen(
     var confirmPassword by remember { mutableStateOf("") }
 
     // Clinic signup fields (only shown when accountType == "clinic" and isLogin == false)
+    var Rating by remember { mutableStateOf("") }
+
     var clinicName by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var city by remember { mutableStateOf("") }
@@ -334,6 +337,14 @@ fun LoginSignupScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             placeholder = { Text("e.g., 9am - 8pm") }
+                        )
+                        OutlinedTextField(
+                            value = Rating,
+                            onValueChange = { Rating = it },
+                            label = { Text("Rating") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
 
                         // Services Selection (Multi-choice)
@@ -641,6 +652,7 @@ fun LoginSignupScreen(
 
                                         if (logoBase64.isNotEmpty() && licenseBase64.isNotEmpty()) {
                                             clinicsViewModel.signUpClinicWithBase64(
+                                                Rating,
                                                 password,
                                                 clinicName,
                                                 email,

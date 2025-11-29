@@ -4,11 +4,10 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Surface
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -21,12 +20,17 @@ import java.net.URLDecoder
 import java.util.*
 import android.os.Handler
 import android.os.Looper
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.input.KeyboardType.Companion.Text
+import androidx.compose.ui.unit.dp
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // اختبر اتصال Firebase
-       // testFirebaseConnection()
 
         setContent {
             PetServiceTempTheme {
@@ -39,48 +43,11 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-   private fun testFirebaseConnection() {
+
+    private fun testFirebaseConnection() {
         try {
             Log.d("FIREBASE_TEST", "🚀 بدء اختبار اتصال Firebase...")
-
-            // الطريقة 1: استخدمي getInstance مباشرة
-            try {
-                val db = FirebaseFirestore.getInstance()
-                Log.d("FIREBASE_TEST", "✅ نجاح - Firestore instance created")
-
-                // اختبر عملية بسيطة
-                db.collection("test").document("quick_test")
-                    .set(hashMapOf("timestamp" to System.currentTimeMillis()))
-                    .addOnSuccessListener {
-                        Log.d("FIREBASE_TEST", "🎉 نجاح كتابة البيانات!")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("FIREBASE_TEST", "❌ فشل الكتابة: ${e.message}")
-                    }
-
-            } catch (e: Exception) {
-                Log.e("FIREBASE_TEST", "❌ فشل الطريقة 1: ${e.message}")
-
-                // الطريقة 2: استخدمي initializeApp يدوياً
-                try {
-                    Log.d("FIREBASE_TEST", "🔧 جرب الطريقة 2: التهيئة اليدوية...")
-                    FirebaseApp.initializeApp(this)
-
-                    // انتظري قليلاً ثم جربي مرة أخرى
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        try {
-                            val db2 = FirebaseFirestore.getInstance()
-                            Log.d("FIREBASE_TEST", "✅ نجاح الطريقة 2 - Firestore instance created")
-                        } catch (e2: Exception) {
-                            Log.e("FIREBASE_TEST", "❌ فشل الطريقة 2: ${e2.message}")
-                        }
-                    }, 1000)
-
-                } catch (e2: Exception) {
-                    Log.e("FIREBASE_TEST", "💥 فشل كامل: ${e2.message}")
-                }
-            }
-
+            // ... كود الاختبار الحالي
         } catch (e: Exception) {
             Log.e("FIREBASE_TEST", "💥 خطأ عام: ${e.message}")
         }
@@ -162,41 +129,39 @@ fun Navigation() {
             val clinicName = URLDecoder.decode(backStackEntry.arguments?.getString("clinicName") ?: "Clinic", "UTF-8")
             ClinicProfileScreen(clinicName = clinicName, navController = navController)
         }
-        composable(
-            route = "clinic_details/{clinicName}/{rating}/{isOpen}/{location}/{reviews}/{phoneNumber}",
-            arguments = listOf(
-                navArgument("clinicName") { type = NavType.StringType },
-                navArgument("rating") { type = NavType.FloatType },
-                navArgument("isOpen") { type = NavType.BoolType },
-                navArgument("location") { type = NavType.StringType },
-                navArgument("reviews") { type = NavType.IntType },
-                navArgument("phoneNumber") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val clinicName = URLDecoder.decode(backStackEntry.arguments?.getString("clinicName") ?: "", "UTF-8")
-            val rating = backStackEntry.arguments?.getFloat("rating") ?: 0f
-            val isOpen = backStackEntry.arguments?.getBoolean("isOpen") ?: false
-            val location = URLDecoder.decode(backStackEntry.arguments?.getString("location") ?: "", "UTF-8")
-            val reviews = backStackEntry.arguments?.getInt("reviews") ?: 0
-            val phoneNumber = URLDecoder.decode(backStackEntry.arguments?.getString("phoneNumber") ?: "", "UTF-8")
 
-            val clinic = Clinic(
-                id = UUID.randomUUID().toString(),
-                name = clinicName,
-                email = "",
-                phoneNumber = phoneNumber,
-                location = location,
-                workingHours = "",
-                logoBase64 = "",
-                licenseBase64 = "",
-                password = "",
-                services = emptyList(),
-                rating = rating.toDouble(),
-                isOpen = isOpen,
-                reviews = reviews
-            )
-            ClinicDetailsScreen(clinic = clinic, navController = navController)
+        // ✅ التصليح هنا فقط - clinic_details composable
+        // في MainActivity.kt - عدلي الـ composable
+        // في MainActivity.kt - عدلي الـ composable الخاص بـ clinic_details
+        // في MainActivity.kt - ضيفي هذا الـ composable
+        composable("clinic_details/{clinicId}") { backStackEntry ->
+            val clinicId = backStackEntry.arguments?.getString("clinicId") ?: ""
+
+            // هنجيب بيانات العيادة من Firebase باستخدام الـ ID
+            val viewModel: ClinicsViewModel = viewModel()
+
+            // هنستخدم LaunchedEffect علشان نجيب البيانات عند فتح الشاشة
+            LaunchedEffect(clinicId) {
+                viewModel.fetchClinicById(clinicId)
+            }
+
+            val selectedClinic by viewModel.selectedClinic.collectAsState()
+
+            if (selectedClinic != null) {
+                ClinicDetailsScreen(clinic = selectedClinic!!, navController = navController)
+            } else {
+                // Loading state
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(color = Color(0xFF819067))
+                        Spacer(modifier = Modifier.
+                        height(16.dp))
+                        Text("Loading clinic details...", color = Color.Gray)
+                    }
+                }
+            }
         }
+
         composable("user_profile") {
             UserProfileScreen(navController = navController)
         }
