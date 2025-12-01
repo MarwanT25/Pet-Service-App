@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "307392392434",
+    "project_id": "cocoproject-58e99",
+    "storage_bucket": "cocoproject-58e99.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:307392392434:android:e3a3a184aedd3f78d0746b",
+        "android_client_info": {
+          "package_name": "com.example.petservicetemp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjUhPd7Yoo7Umq9zffZGtSayI0Pxpw3e0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
