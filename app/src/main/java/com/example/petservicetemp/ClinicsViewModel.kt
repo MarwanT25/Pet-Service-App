@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.*
 
 class ClinicsViewModel : ViewModel() {
 
@@ -100,6 +101,7 @@ class ClinicsViewModel : ViewModel() {
 
     // الدالة علشان الـ Base64
     fun signUpClinicWithBase64(
+        id:String,
         rating: String,
         password: String,
         clinicName: String,
@@ -120,7 +122,7 @@ class ClinicsViewModel : ViewModel() {
         println("⭐ Rating being saved: $ratingValue")
 
         val clinic = Clinic(
-
+            id= UUID.randomUUID().toString(),
             name = clinicName,
             email = email,
             phoneNumber = phone,

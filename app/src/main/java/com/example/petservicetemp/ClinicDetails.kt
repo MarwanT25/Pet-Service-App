@@ -79,11 +79,6 @@ fun ClinicAppBar(
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                 }
             },
-            actions = {
-                IconButton(onClick = { }) {
-                    Icon(Icons.Default.Favorite, contentDescription = "Favorite")
-                }
-            }
         )
     }) { innerPadding ->
         ClinicBody(clinic = clinic, navController = navController, modifier = Modifier.padding(innerPadding))
@@ -172,7 +167,7 @@ fun ClinicBody(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (clinic?.isOpen == true) "✅ Open Now" else "❌ Currently Closed",
+                        if (clinic?.isOpen == true) "Open Now" else "Closed",
                         fontSize = 16.sp,
                         color = if (clinic?.isOpen == true) Color(0xFF4CAF50) else Color.Red,
                         fontWeight = FontWeight.Medium

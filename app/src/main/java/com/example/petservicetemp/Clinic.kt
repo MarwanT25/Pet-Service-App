@@ -1,4 +1,3 @@
-// Clinic.kt - تأكدي من الـ default values
 package com.example.petservicetemp
 
 data class Clinic(
@@ -7,15 +6,16 @@ data class Clinic(
     val email: String = "",
     val phoneNumber: String = "",
     val location: String = "",
-    val workingHours: String = "9:00 AM - 8:00 PM", // default value
-    val logoBase64: String = "", // default empty
+    val workingHours: String = "9:00 AM - 8:00 PM",
+    val logoBase64: String = "",
     val licenseBase64: String = "",
     val password: String = "",
-    val services: List<String> = emptyList(), // default empty list
-    val rating: Double = 0.0, // default 0.0
-    val isOpen: Boolean = false, // default false
-    val reviews: Int = 0 // default 0
+    val services: List<String> = emptyList(),
+    val rating: Double = 0.0,
+    val isOpen: Boolean = false, // ✅ واحد فقط
+    val reviews: Int = 0
 ) {
+    // constructor فاضي علشان Firebase
     constructor() : this(
         id = "",
         name = "",

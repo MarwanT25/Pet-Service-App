@@ -2,6 +2,7 @@ package com.example.petservicetemp
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,10 +39,11 @@ import androidx.navigation.NavHostController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
+import java.util.UUID
 
 @Composable
 fun LoginSignupScreen(
-    accountType: String, // "clinic" or "user"
+    accountType: String,
     navController: NavHostController?
 ) {
     val primary = Color(0xFF819067)
@@ -49,12 +51,11 @@ fun LoginSignupScreen(
     val backgroundLight = Color(0xFFF8F8F8)
     val context = LocalContext.current
 
-    var isLogin by remember { mutableStateOf(true) } // true for Login, false for Signup
+    var isLogin by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-
-    // Clinic signup fields (only shown when accountType == "clinic" and isLogin == false)
+    var idclinic by remember { mutableStateOf("") }
     var Rating by remember { mutableStateOf("") }
 
     var clinicName by remember { mutableStateOf("") }
@@ -68,27 +69,16 @@ fun LoginSignupScreen(
     var clinicBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var licenseBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
-    // User signup fields (only shown when accountType == "user" and isLogin == false)
     var userName by remember { mutableStateOf("") }
     var userPhone by remember { mutableStateOf("") }
     var numberOfPets by remember { mutableStateOf("") }
     var pets by remember { mutableStateOf(mutableListOf<Petss>()) }
 
-    // Available services list
     val availableServices = listOf(
-        "Grooming",
-        "Checkup",
-        "Vaccine",
-        "Surgery",
-        "Boarding",
-        "Daycare",
-        "Emergency Care",
-        "Dental Care",
-        "X-Ray",
-        "Laboratory Tests"
+        "Grooming", "Checkup", "Vaccine", "Surgery", "Boarding",
+        "Daycare", "Emergency Care", "Dental Care", "X-Ray", "Laboratory Tests"
     )
 
-    // Function to load bitmap from URI
     suspend fun loadBitmap(uri: Uri): android.graphics.Bitmap? {
         return withContext(Dispatchers.IO) {
             try {
@@ -101,7 +91,6 @@ fun LoginSignupScreen(
         }
     }
 
-    // Function to convert bitmap to Base64
     fun bitmapToBase64(bitmap: android.graphics.Bitmap?): String {
         return if (bitmap != null) {
             val byteArrayOutputStream = ByteArrayOutputStream()
@@ -113,7 +102,6 @@ fun LoginSignupScreen(
         }
     }
 
-    // Update pets list when number changes (for User signup)
     LaunchedEffect(numberOfPets) {
         if (accountType == "user") {
             val count = numberOfPets.toIntOrNull() ?: 0
@@ -125,15 +113,12 @@ fun LoginSignupScreen(
         }
     }
 
-    // Launcher for clinic image
-    val clinicImageLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.GetContent()
-        ) { uri: Uri? ->
-            clinicImageUri = uri
-        }
+    val clinicImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        clinicImageUri = uri
+    }
 
-    // Load clinic bitmap when URI changes
     LaunchedEffect(clinicImageUri) {
         if (clinicImageUri != null) {
             clinicBitmap = loadBitmap(clinicImageUri!!)
@@ -142,15 +127,12 @@ fun LoginSignupScreen(
         }
     }
 
-    // Launcher for license image
-    val licenseImageLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.GetContent()
-        ) { uri: Uri? ->
-            licenseImageUri = uri
-        }
+    val licenseImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        licenseImageUri = uri
+    }
 
-    // Load license bitmap when URI changes
     LaunchedEffect(licenseImageUri) {
         if (licenseImageUri != null) {
             licenseBitmap = loadBitmap(licenseImageUri!!)
@@ -159,7 +141,6 @@ fun LoginSignupScreen(
         }
     }
 
-    // ViewModels
     val clinicsViewModel: ClinicsViewModel = viewModel()
     val userViewModel: UserViewModel = viewModel()
 
@@ -187,10 +168,8 @@ fun LoginSignupScreen(
     ) { innerPadding ->
         val scrollState = rememberScrollState()
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-        )
-        {
+            modifier = Modifier.fillMaxSize()
+        ) {
             Image(
                 painter = painterResource(id = R.drawable.good_doggy_bro_1),
                 contentDescription = null,
@@ -206,7 +185,6 @@ fun LoginSignupScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Toggle between Login and Signup
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -242,11 +220,8 @@ fun LoginSignupScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // ========== CLINIC FIELDS ==========
                 if (accountType == "clinic") {
-                    // Clinic Login Fields
                     if (isLogin) {
-                        // Email field
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
@@ -255,7 +230,6 @@ fun LoginSignupScreen(
                             singleLine = true
                         )
 
-                        // Password field
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
@@ -264,10 +238,7 @@ fun LoginSignupScreen(
                             singleLine = true,
                             visualTransformation = PasswordVisualTransformation()
                         )
-                    }
-                    // Clinic Signup Fields
-                    else {
-                        // Email field
+                    } else {
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
@@ -276,7 +247,6 @@ fun LoginSignupScreen(
                             singleLine = true
                         )
 
-                        // Password field
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
@@ -286,7 +256,6 @@ fun LoginSignupScreen(
                             visualTransformation = PasswordVisualTransformation()
                         )
 
-                        // Confirm Password (only for Signup)
                         OutlinedTextField(
                             value = confirmPassword,
                             onValueChange = { confirmPassword = it },
@@ -338,6 +307,7 @@ fun LoginSignupScreen(
                             singleLine = true,
                             placeholder = { Text("e.g., 9am - 8pm") }
                         )
+
                         OutlinedTextField(
                             value = Rating,
                             onValueChange = { Rating = it },
@@ -347,7 +317,6 @@ fun LoginSignupScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
 
-                        // Services Selection (Multi-choice)
                         Text(
                             text = "Services *",
                             fontWeight = FontWeight.Bold,
@@ -398,7 +367,6 @@ fun LoginSignupScreen(
                             }
                         }
 
-                        // Clinic Logo (Required)
                         Text(
                             text = "Clinic Logo",
                             fontWeight = FontWeight.Bold,
@@ -433,7 +401,6 @@ fun LoginSignupScreen(
                             }
                         }
 
-                        // License Picture (Required)
                         Text(
                             text = "License Image",
                             fontWeight = FontWeight.Bold,
@@ -468,12 +435,8 @@ fun LoginSignupScreen(
                             }
                         }
                     }
-                }
-                // ========== USER FIELDS ==========
-                else {
-                    // User Login Fields
+                } else {
                     if (isLogin) {
-                        // Email field
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
@@ -482,7 +445,6 @@ fun LoginSignupScreen(
                             singleLine = true
                         )
 
-                        // Password field
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
@@ -491,10 +453,7 @@ fun LoginSignupScreen(
                             singleLine = true,
                             visualTransformation = PasswordVisualTransformation()
                         )
-                    }
-                    // User Signup Fields
-                    else {
-                        // Email field
+                    } else {
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
@@ -503,7 +462,6 @@ fun LoginSignupScreen(
                             singleLine = true
                         )
 
-                        // Password field
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
@@ -513,7 +471,6 @@ fun LoginSignupScreen(
                             visualTransformation = PasswordVisualTransformation()
                         )
 
-                        // Confirm Password (only for Signup)
                         OutlinedTextField(
                             value = confirmPassword,
                             onValueChange = { confirmPassword = it },
@@ -541,7 +498,6 @@ fun LoginSignupScreen(
                             singleLine = true
                         )
 
-                        // Number of Pets
                         OutlinedTextField(
                             value = numberOfPets,
                             onValueChange = {
@@ -555,7 +511,6 @@ fun LoginSignupScreen(
                             placeholder = { Text("Enter number of pets") }
                         )
 
-                        // Pets List
                         if (pets.isNotEmpty()) {
                             Text(
                                 text = "Pet Information",
@@ -606,13 +561,14 @@ fun LoginSignupScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Submit button
+                // ========== SUBMIT BUTTON - FIXED ==========
                 Button(
                     onClick = {
+                        Log.d("SignupButton", "Button clicked - isLogin: $isLogin, accountType: $accountType")
+
                         if (isLogin) {
-                            // ========== LOGIN LOGIC ==========
+                            // LOGIN LOGIC
                             if (accountType == "clinic") {
-                                // ========== CLINIC LOGIN ==========
                                 if(email.isNotEmpty() && password.isNotEmpty()) {
                                     clinicsViewModel.loginClinic(email, password) { success, error ->
                                         if(success) {
@@ -625,10 +581,8 @@ fun LoginSignupScreen(
                                     }
                                 }
                             } else {
-                                // ========== USER LOGIN ==========
                                 userViewModel.loginUser(email, password) { success, error ->
                                     if(success) {
-                                        // ✅ التصحيح: استخدم "clinics" بدون parameters
                                         navController?.navigate("clinics") {
                                             popUpTo("choose_account") { inclusive = true }
                                         }
@@ -639,45 +593,70 @@ fun LoginSignupScreen(
                             }
                         }
                         else {
-                            // ========== SIGNUP LOGIC ==========
+                            // SIGNUP LOGIC
                             if (password == confirmPassword) {
                                 if (accountType == "clinic") {
-                                    // ========== CLINIC SIGNUP ==========
-                                    if (clinicName.isNotEmpty() && address.isNotEmpty() && city.isNotEmpty() &&
-                                        phone.isNotEmpty() && workingHours.isNotEmpty() &&
-                                        selectedServices.isNotEmpty() && clinicImageUri != null && licenseImageUri != null
-                                    ) {
-                                        val logoBase64 = bitmapToBase64(clinicBitmap)
-                                        val licenseBase64 = bitmapToBase64(licenseBitmap)
+                                    // ========== CLINIC SIGNUP - CORRECTED ==========
+                                    Log.d("ClinicSignup", "Validating clinic data...")
 
-                                        if (logoBase64.isNotEmpty() && licenseBase64.isNotEmpty()) {
-                                            clinicsViewModel.signUpClinicWithBase64(
-                                                Rating,
-                                                password,
-                                                clinicName,
-                                                email,
-                                                phone,
-                                                address,
-                                                city,
-                                                workingHours,
-                                                selectedServices.toList(),
-                                                logoBase64,
-                                                licenseBase64
-                                            ) { success, error ->
-                                                if (success) {
-                                                    navController?.navigate("clinic_home/$clinicName") {
-                                                        popUpTo("choose_account") { inclusive = true }
+                                    if (email.isNotEmpty() && password.isNotEmpty() && confirmPassword.isNotEmpty() &&
+                                        clinicName.isNotEmpty() && address.isNotEmpty() && city.isNotEmpty() &&
+                                        phone.isNotEmpty() && workingHours.isNotEmpty() && Rating.isNotEmpty() &&
+                                        selectedServices.isNotEmpty() && clinicImageUri != null && licenseImageUri != null) {
+
+                                        try {
+                                            val logoBase64 = bitmapToBase64(clinicBitmap)
+                                            val licenseBase64 = bitmapToBase64(licenseBitmap)
+
+                                            if (logoBase64.isNotEmpty() && licenseBase64.isNotEmpty()) {
+                                                Log.d("ClinicSignup", "Base64 strings created successfully")
+
+                                                // ========== التصحيح: تمرير المعاملات بالترتيب الصحيح ==========
+                                                clinicsViewModel.signUpClinicWithBase64(
+                                                    id = UUID.randomUUID().toString(), // 1. id
+                                                    rating = Rating,                     // 2. rating
+                                                    password = password,                 // 3. password
+                                                    clinicName = clinicName,             // 4. clinicName
+                                                    email = email,                       // 5. email
+                                                    phone = phone,                       // 6. phone
+                                                    address = address,                   // 7. address
+                                                    city = city,                         // 8. city
+                                                    workingHours = workingHours,         // 9. workingHours
+                                                    selectedServices = selectedServices.toList(), // 10. selectedServices
+                                                    logoBase64 = logoBase64,             // 11. logoBase64
+                                                    licenseBase64 = licenseBase64,       // 12. licenseBase64
+                                                    onResult = { success, error ->       // callback
+                                                        Log.d("ClinicSignup", "ViewModel callback: Success=$success, Error=$error")
+                                                        if (success) {
+                                                            navController?.navigate("clinic_home/$email") {
+                                                                popUpTo("choose_account") { inclusive = true }
+                                                            }
+                                                        } else {
+                                                            Toast.makeText(
+                                                                context,
+                                                                error ?: "Registration failed",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
                                                     }
-                                                } else {
-                                                    Toast.makeText(context, error ?: "Failed to register clinic", Toast.LENGTH_SHORT).show()
-                                                }
+                                                )
+                                            } else {
+                                                Toast.makeText(context, "Failed to process images", Toast.LENGTH_SHORT).show()
                                             }
-                                        } else {
-                                            Toast.makeText(context, "Failed to process images", Toast.LENGTH_SHORT).show()
+                                        } catch (e: Exception) {
+                                            Log.e("ClinicSignup", "Error: ${e.message}", e)
+                                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                                         }
+                                    } else {
+                                        Toast.makeText(context, "Please fill all required fields", Toast.LENGTH_LONG).show()
+                                        Log.d("ClinicSignup", "Validation failed - Missing fields")
+                                        Log.d("ClinicSignup", "Email: ${email.isNotEmpty()}, Password: ${password.isNotEmpty()}")
+                                        Log.d("ClinicSignup", "ClinicName: ${clinicName.isNotEmpty()}, Rating: ${Rating.isNotEmpty()}")
+                                        Log.d("ClinicSignup", "Services: ${selectedServices.isNotEmpty()}")
+                                        Log.d("ClinicSignup", "Images: Clinic=${clinicImageUri != null}, License=${licenseImageUri != null}")
                                     }
                                 } else {
-                                    // ========== USER SIGNUP ==========
+                                    // USER SIGNUP
                                     val petsValid = pets.isEmpty() || pets.all { it.petType.isNotEmpty() }
                                     if (userName.isNotEmpty() && userPhone.isNotEmpty() &&
                                         (numberOfPets.isEmpty() || (numberOfPets.toIntOrNull() ?: 0) > 0) && petsValid
@@ -704,7 +683,6 @@ fun LoginSignupScreen(
                                             pets = petsWithBase64
                                         ) { success, error ->
                                             if (success) {
-                                                // ✅ التصحيح: استخدم "clinics" بدون parameters
                                                 navController?.navigate("clinics") {
                                                     popUpTo("choose_account") { inclusive = true }
                                                 }
@@ -718,6 +696,8 @@ fun LoginSignupScreen(
                                         }
                                     }
                                 }
+                            } else {
+                                Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                             }
                         }
                     },
@@ -727,17 +707,15 @@ fun LoginSignupScreen(
                     shape = RoundedCornerShape(40.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = primary),
                     enabled = if (isLogin) {
-                        // ========== LOGIN VALIDATION ==========
                         email.isNotEmpty() && password.isNotEmpty()
                     } else {
                         if (accountType == "clinic") {
-                            // ========== CLINIC SIGNUP VALIDATION ==========
+                            // ========== FIXED VALIDATION ==========
                             email.isNotEmpty() && password.isNotEmpty() && confirmPassword.isNotEmpty() &&
                                     clinicName.isNotEmpty() && address.isNotEmpty() && city.isNotEmpty() &&
-                                    phone.isNotEmpty() && workingHours.isNotEmpty() &&
+                                    phone.isNotEmpty() && workingHours.isNotEmpty() && Rating.isNotEmpty() &&
                                     selectedServices.isNotEmpty() && clinicImageUri != null && licenseImageUri != null
                         } else {
-                            // ========== USER SIGNUP VALIDATION ==========
                             val petsValid = pets.isEmpty() || pets.all { it.petType.isNotEmpty() }
                             email.isNotEmpty() && password.isNotEmpty() && confirmPassword.isNotEmpty() &&
                                     userName.isNotEmpty() && userPhone.isNotEmpty() &&
@@ -775,7 +753,6 @@ fun UserPetCard(
         onImageSelected(uri)
     }
 
-    // Load bitmap when URI changes
     LaunchedEffect(pet.imageUri) {
         if (pet.imageUri != null) {
             val bitmap = loadBitmap(pet.imageUri!!)
@@ -800,7 +777,6 @@ fun UserPetCard(
                 color = primaryDark
             )
 
-            // Pet Type Dropdown
             OutlinedTextField(
                 value = pet.petType,
                 onValueChange = { newType ->
@@ -812,7 +788,6 @@ fun UserPetCard(
                 placeholder = { Text("Cat, Dog...") }
             )
 
-            // Pet Image (Optional)
             Text(
                 text = "Pet Image (Optional)",
                 fontSize = 14.sp,
