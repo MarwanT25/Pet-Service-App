@@ -33,7 +33,7 @@ fun ChooseAccountTypeScreen(navController: NavHostController?) {
     ) {
         // الخلفية
         Image(
-            painter = painterResource(id = R.drawable.good_doggy_bro_1 ), // ← حطي صورتك هنا
+            painter = painterResource(id = R.drawable.good_doggy_bro_1 ),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
@@ -42,7 +42,7 @@ fun ChooseAccountTypeScreen(navController: NavHostController?) {
         // المحتوى فوق الخلفية
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            backgroundColor = Color.Transparent   // مهم جدًا لازم خلفية الشاشه تبقى شفافه
+            backgroundColor = Color.Transparent
         ) { padding ->
 
             Column(
@@ -54,9 +54,9 @@ fun ChooseAccountTypeScreen(navController: NavHostController?) {
                 verticalArrangement = Arrangement.Center
             ) {
 
-                // باقي كودك زي ما هو…
+
                 Image(
-                    painter = painterResource(id = R.drawable.icons ), // ← حطي صورتك هنا
+                    painter = painterResource(id = R.drawable.icons ),
                     contentDescription = null,
                     Modifier.size(150.dp),
                     contentScale = ContentScale.Crop

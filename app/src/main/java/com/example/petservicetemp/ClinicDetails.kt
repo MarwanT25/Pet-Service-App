@@ -48,6 +48,7 @@ fun ClinicDetailsScreen(
     // Debug علشان نتأكد من البيانات
     LaunchedEffect(clinic) {
         println("🎯 ClinicDetails - Name: ${clinic.name}")
+        println("🎯 ClinicDetails - ID: ${clinic.id}")
         println("🎯 ClinicDetails - Working Hours: ${clinic.workingHours}")
         println("🎯 ClinicDetails - Services: ${clinic.services}")
         println("🎯 ClinicDetails - Rating: ${clinic.rating}")
@@ -79,6 +80,12 @@ fun ClinicAppBar(
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                 }
             },
+
+            actions = {
+                IconButton(onClick = { }) {
+                    Icon(Icons.Default.Favorite, contentDescription = "Favorite")
+                }
+            }
         )
     }) { innerPadding ->
         ClinicBody(clinic = clinic, navController = navController, modifier = Modifier.padding(innerPadding))
@@ -167,7 +174,7 @@ fun ClinicBody(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (clinic?.isOpen == true) "Open Now" else "Closed",
+                        if (clinic?.isOpen == true) "Open Now" else "Currently Closed",
                         fontSize = 16.sp,
                         color = if (clinic?.isOpen == true) Color(0xFF4CAF50) else Color.Red,
                         fontWeight = FontWeight.Medium
@@ -176,7 +183,7 @@ fun ClinicBody(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // زر الحجز
+                // زر الحجز - محدث ليرسل clinicId مع البيانات
                 Button(
                     onClick = {
                         clinic?.let {
@@ -184,7 +191,7 @@ fun ClinicBody(
                             val encodedLocation = java.net.URLEncoder.encode(it.location, "UTF-8")
                             val encodedPhone = java.net.URLEncoder.encode(it.phoneNumber, "UTF-8")
                             navController?.navigate(
-                                "booking/$encodedName/${it.rating}/${it.isOpen}/$encodedLocation/${it.reviews}/$encodedPhone"
+                                "booking/${it.id}/$encodedName/${it.rating}/${it.isOpen}/$encodedLocation/${it.reviews}/$encodedPhone"
                             )
                         }
                     },

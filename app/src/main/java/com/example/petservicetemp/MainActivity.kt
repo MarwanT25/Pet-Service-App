@@ -4,9 +4,15 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -17,16 +23,6 @@ import com.example.petservicetemp.ui.theme.PetServiceTempTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
 import java.net.URLDecoder
-import java.util.*
-import android.os.Handler
-import android.os.Looper
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.input.KeyboardType.Companion.Text
-import androidx.compose.ui.unit.dp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,10 +42,10 @@ class MainActivity : ComponentActivity() {
 
     private fun testFirebaseConnection() {
         try {
-            Log.d("FIREBASE_TEST", "🚀 بدء اختبار اتصال Firebase...")
-            // ... كود الاختبار الحالي
+            Log.d("FIREBASE_TEST", "🚀  Firebase...")
+            // Test Firebase connection code here
         } catch (e: Exception) {
-            Log.e("FIREBASE_TEST", "💥 خطأ عام: ${e.message}")
+            Log.e("FIREBASE_TEST", "💥 : ${e.message}")
         }
     }
 }
@@ -80,12 +76,16 @@ fun Navigation() {
         composable("signup_user") {
             SignupUserScreen(navController = navController)
         }
+
         composable("clinics") {
             ClinicScreen(navController = navController)
         }
+
+        // Updated booking route to include clinicId
         composable(
-            route = "booking/{clinicName}/{rating}/{isOpen}/{location}/{reviews}/{phoneNumber}",
+            route = "booking/{clinicId}/{clinicName}/{rating}/{isOpen}/{location}/{reviews}/{phoneNumber}",
             arguments = listOf(
+                navArgument("clinicId") { type = NavType.StringType },
                 navArgument("clinicName") { type = NavType.StringType },
                 navArgument("rating") { type = NavType.FloatType },
                 navArgument("isOpen") { type = NavType.BoolType },
@@ -94,6 +94,7 @@ fun Navigation() {
                 navArgument("phoneNumber") { type = NavType.StringType }
             )
         ) { backStackEntry ->
+            val clinicId = backStackEntry.arguments?.getString("clinicId") ?: ""
             val clinicName = URLDecoder.decode(backStackEntry.arguments?.getString("clinicName") ?: "", "UTF-8")
             val rating = backStackEntry.arguments?.getFloat("rating") ?: 0f
             val isOpen = backStackEntry.arguments?.getBoolean("isOpen") ?: false
@@ -102,6 +103,7 @@ fun Navigation() {
             val phoneNumber = URLDecoder.decode(backStackEntry.arguments?.getString("phoneNumber") ?: "", "UTF-8")
 
             BookingScreenStyled(
+                clinicId = clinicId,
                 clinicName = clinicName,
                 rating = rating.toDouble(),
                 isOpen = isOpen,
@@ -111,6 +113,7 @@ fun Navigation() {
                 navController = navController
             )
         }
+
         composable(
             route = "clinic_home/{clinicName}",
             arguments = listOf(
@@ -120,6 +123,7 @@ fun Navigation() {
             val clinicName = URLDecoder.decode(backStackEntry.arguments?.getString("clinicName") ?: "Clinic", "UTF-8")
             ClinicHomeScreen(clinicName = clinicName, navController = navController)
         }
+
         composable(
             route = "clinic_profile/{clinicName}",
             arguments = listOf(
@@ -130,19 +134,16 @@ fun Navigation() {
             ClinicProfileScreen(clinicName = clinicName, navController = navController)
         }
 
-        // ✅ التصليح هنا فقط - clinic_details composable
-        // في MainActivity.kt - عدلي الـ composable
-        // في MainActivity.kt - عدلي الـ composable الخاص بـ clinic_details
-        // في MainActivity.kt - ضيفي هذا الـ composable
         composable("clinic_details/{clinicId}") { backStackEntry ->
             val clinicId = backStackEntry.arguments?.getString("clinicId") ?: ""
 
-            // هنجيب بيانات العيادة من Firebase باستخدام الـ ID
             val viewModel: ClinicsViewModel = viewModel()
 
-            // هنستخدم LaunchedEffect علشان نجيب البيانات عند فتح الشاشة
+            // Fetch clinic data when screen opens
             LaunchedEffect(clinicId) {
-                viewModel.fetchClinicById(clinicId)
+                if (clinicId.isNotEmpty()) {
+                    viewModel.fetchClinicById(clinicId)
+                }
             }
 
             val selectedClinic by viewModel.selectedClinic.collectAsState()
@@ -151,11 +152,13 @@ fun Navigation() {
                 ClinicDetailsScreen(clinic = selectedClinic!!, navController = navController)
             } else {
                 // Loading state
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator(color = Color(0xFF819067))
-                        Spacer(modifier = Modifier.
-                        height(16.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text("Loading clinic details...", color = Color.Gray)
                     }
                 }

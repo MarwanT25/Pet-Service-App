@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.browser.browseractions.BrowserServiceFileProvider.loadBitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,20 +45,19 @@ import java.util.UUID
 @Composable
 fun LoginSignupScreen(
     accountType: String,
+
     navController: NavHostController?
 ) {
     val primary = Color(0xFF819067)
     val primaryDark = Color(0xFF404C35)
     val backgroundLight = Color(0xFFF8F8F8)
     val context = LocalContext.current
-
     var isLogin by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var idclinic by remember { mutableStateOf("") }
     var Rating by remember { mutableStateOf("") }
-
     var clinicName by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var city by remember { mutableStateOf("") }
@@ -68,7 +68,6 @@ fun LoginSignupScreen(
     var licenseImageUri by remember { mutableStateOf<Uri?>(null) }
     var clinicBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var licenseBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-
     var userName by remember { mutableStateOf("") }
     var userPhone by remember { mutableStateOf("") }
     var numberOfPets by remember { mutableStateOf("") }
@@ -78,6 +77,17 @@ fun LoginSignupScreen(
         "Grooming", "Checkup", "Vaccine", "Surgery", "Boarding",
         "Daycare", "Emergency Care", "Dental Care", "X-Ray", "Laboratory Tests"
     )
+    /**(3)loadBitmap(uri: Uri)
+     * عندك URI (رابط يشاور على صورة في الجهاز).
+    عايزة تحولي الصورة دي لـ Bitmap علشان Jetpack Compose يعرف يعرضها.
+    وظيفتها: تاخد صورة من جهاز المستخدم  على شكل URI، وتقراها وتحوّلها لصورة Bitmap جاهزة للعرض أو المعالجه*
+    كيف بتشتغل:
+    تشتغل في خيط خلفي (Dispatchers.IO) عشان قراءة الملفات عملية ثقيلة وما توقفش واجهة المستخدم.
+    تفتح تيار البيانات (InputStream) من الـ URI.
+    تحول البيانات لصورة Bitmap (BitmapFactory.decodeStream).
+    لو فيه أي مشكلة أثناء القراءة (مثلاً الصورة مش موجودة) → ترجع null.
+    باختصار: تاخد صورة من الجهاز وتعملها Bitmap.
+     */
 
     suspend fun loadBitmap(uri: Uri): android.graphics.Bitmap? {
         return withContext(Dispatchers.IO) {
@@ -91,46 +101,55 @@ fun LoginSignupScreen(
         }
     }
 
-    fun bitmapToBase64(bitmap: android.graphics.Bitmap?): String {
-        return if (bitmap != null) {
-            val byteArrayOutputStream = ByteArrayOutputStream()
-            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, byteArrayOutputStream)
-            val byteArray = byteArrayOutputStream.toByteArray()
-            Base64.encodeToString(byteArray, Base64.DEFAULT)
-        } else {
-            ""
-        }
-    }
 
-    LaunchedEffect(numberOfPets) {
-        if (accountType == "user") {
-            val count = numberOfPets.toIntOrNull() ?: 0
-            if (count > 0 && pets.size != count) {
-                pets = (0 until count).map { Petss() }.toMutableList()
-            } else if (count == 0) {
-                pets.clear()
-            }
-        }
-    }
 
+
+
+
+
+    /**(1)clinicImageLauncher و licenseImageLauncher
+
+    وظيفتها: فتح معرض الصور لاختيار صورة للعيادة (clinic) أو صورة الرخصة (license).
+
+    كيف بتشتغل:
+
+    rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) → تفتح اختيار صورة.
+
+    بعد ما المستخدم يختار الصورة → تحط الـ URI في المتغير المناسب (clinicImageUri أو licenseImageUri).
+
+    الفرق بينهم: واحد للـ logo وواحد للرخصة.*/
     val clinicImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         clinicImageUri = uri
     }
 
+    val licenseImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        licenseImageUri = uri
+    }
+
+    /**(2)(4)LaunchedEffect(clinicImageUri) و LaunchedEffect(licenseImageUri)
+
+    وظيفتها: كل ما الـ URI يتغير (المستخدم يختار صورة جديدة)، تتحول الصورة لـ Bitmap.
+
+    كيف بتشتغل:
+    تتحقق إذا الـ URI موجود.
+
+    تستخدم loadBitmap(uri) لتحويل الصورة لـ Bitmap.
+
+    تحفظ النتيجة في المتغير (clinicBitmap أو licenseBitmap).
+
+    لو مفيش URI → تفرغ المتغير (null).
+
+    الفرق بينهم: واحد يتابع صورة العيادة، والتاني يتابع صورة الرخصة.*/
     LaunchedEffect(clinicImageUri) {
         if (clinicImageUri != null) {
             clinicBitmap = loadBitmap(clinicImageUri!!)
         } else {
             clinicBitmap = null
         }
-    }
-
-    val licenseImageLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        licenseImageUri = uri
     }
 
     LaunchedEffect(licenseImageUri) {
@@ -141,6 +160,64 @@ fun LoginSignupScreen(
         }
     }
 
+/**. (5)bitmapToBase64(bitmap: Bitmap?)
+
+وظيفتها: تحول صورة Bitmap لسلسلة نصية Base64، عشان تبعتها لأي API أو تخزنها في قاعدة بيانات.
+
+كيف بتشتغل:
+
+لو الصورة موجودة (bitmap != null) → تجهز تيار بايت (ByteArrayOutputStream).
+
+تضغط الصورة بصيغة JPEG بجودة 70% وتحطها في التيار.
+
+تحول التيار لمصفوفة بايت (byteArray).
+
+تحول المصفوفة لسلسلة نصية Base64.
+
+لو الصورة مش موجودة → ترجع سلسلة فاضية "".
+
+باختصار: تاخد Bitmap وتعمله String جاهزة للرفع أو التخزين.*/
+
+    fun bitmapToBase64(bitmap: android.graphics.Bitmap?): String {
+        return if  (bitmap != null) {
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, byteArrayOutputStream)
+            val byteArray = byteArrayOutputStream.toByteArray()
+            Base64.encodeToString(byteArray, Base64.DEFAULT)
+        } else {
+            ""
+        }
+    }
+
+/**LaunchedEffect(numberOfPets)
+وظيفتها: تتابع تغيّر عدد الحيوانات الأليفة (numberOfPets) عند المستخدم.
+كيف بتشتغل:
+لما المستخدم يغيّر الرقم، تتحقق الدالة:
+لو الرقم > 0 وعدد عناصر pets مش مساوي للرقم → تنشئ قائمة جديدة من Petss() لكل حيوان.
+لو الرقم = 0 → تفرغ القائمة.
+الفرق هنا: دي مش بتتعامل مع الصور مباشرة، بس بتتابع المتغير وتعمل تحديث للقائمة.*/
+    LaunchedEffect(numberOfPets) {
+        if (accountType == "user") {
+            val count = numberOfPets.toIntOrNull() ?: 0//تحويل النص لرقم
+            if (count > 0 && pets.size != count) {
+                pets = (0 until count)//دي بتعمل range من الأرقام
+                    .map { Petss() }//map يعني: "لكل رقم في الـ range، نفّذي الكود ده".
+                   //اعمل object جديد من Petss() لكل دورة".
+                    .toMutableList()//فـ toMutableList() بتحوّلها إلى list قابلة للتعديل.
+            } else if (count == 0) {
+                pets.clear()
+            }
+        }
+    }
+    /**أنتي بتطلبي ViewModel اسمه ClinicsViewModel.
+
+    Compose هيدوّر:
+    هل فيه ViewModel اسم ClinicsViewModel موجود already للشاشة دي؟
+    لو نعم → يديهولك.
+    لو لا → ينشئ واحد جديد ويخزّنه.
+    النتيجة:
+    عندك object من ClinicsViewModel جاهز تتعاملي معاه:
+    قراءة بيانات – استدعاء دوال – متابعة الـ State.*/
     val clinicsViewModel: ClinicsViewModel = viewModel()
     val userViewModel: UserViewModel = viewModel()
 
@@ -170,6 +247,7 @@ fun LoginSignupScreen(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
+
             Image(
                 painter = painterResource(id = R.drawable.good_doggy_bro_1),
                 contentDescription = null,
@@ -185,6 +263,7 @@ fun LoginSignupScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -222,6 +301,7 @@ fun LoginSignupScreen(
 
                 if (accountType == "clinic") {
                     if (isLogin) {
+
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
@@ -229,6 +309,7 @@ fun LoginSignupScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
+
 
                         OutlinedTextField(
                             value = password,
@@ -239,6 +320,7 @@ fun LoginSignupScreen(
                             visualTransformation = PasswordVisualTransformation()
                         )
                     } else {
+
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
@@ -246,6 +328,7 @@ fun LoginSignupScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
+
 
                         OutlinedTextField(
                             value = password,
@@ -255,6 +338,7 @@ fun LoginSignupScreen(
                             singleLine = true,
                             visualTransformation = PasswordVisualTransformation()
                         )
+
 
                         OutlinedTextField(
                             value = confirmPassword,
@@ -341,19 +425,19 @@ fun LoginSignupScreen(
                                             .fillMaxWidth()
                                             .clickable {
                                                 selectedServices =
-                                                    if (selectedServices.contains(service)) {
-                                                        selectedServices - service
+                                                    if (selectedServices.contains(service)) {/**بيتأكد إذا الخدمة موجودة بالفعل في المجموعة.لو موجودة (true):*/
+                                                        selectedServices - service/** بيعمل selectedServices - service → يعني يحذف الخدمة من المجموعة.*/
                                                     } else {
-                                                        selectedServices + service
+                                                        selectedServices + service/**يعمل selectedServices + service → يعني يضيف الخدمة للمجموعة.*/
                                                     }
                                             }
                                             .padding(8.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Checkbox(
-                                            checked = selectedServices.contains(service),
-                                            onCheckedChange = {
-                                                selectedServices = if (it) {
+                                            checked = selectedServices.contains(service),//لو الخدمة موجودة في selectedServices → الـ Checkbox هيبقى متعلم (checked).
+                                            onCheckedChange = {//ده الحدث اللي بيتنفذ لما المستخدم يضغط على الـ Checkbox
+                                                selectedServices = if (it) {//it هنا بيكون true لو المستخدم علم الـ Checkbox، وfalse لو شال العلامة.
                                                     selectedServices + service
                                                 } else {
                                                     selectedServices - service
@@ -401,6 +485,7 @@ fun LoginSignupScreen(
                             }
                         }
 
+
                         Text(
                             text = "License Image",
                             fontWeight = FontWeight.Bold,
@@ -437,6 +522,7 @@ fun LoginSignupScreen(
                     }
                 } else {
                     if (isLogin) {
+
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
@@ -444,6 +530,7 @@ fun LoginSignupScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
+
 
                         OutlinedTextField(
                             value = password,
@@ -454,6 +541,7 @@ fun LoginSignupScreen(
                             visualTransformation = PasswordVisualTransformation()
                         )
                     } else {
+
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
@@ -461,6 +549,7 @@ fun LoginSignupScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
+
 
                         OutlinedTextField(
                             value = password,
@@ -470,6 +559,7 @@ fun LoginSignupScreen(
                             singleLine = true,
                             visualTransformation = PasswordVisualTransformation()
                         )
+
 
                         OutlinedTextField(
                             value = confirmPassword,
@@ -498,6 +588,7 @@ fun LoginSignupScreen(
                             singleLine = true
                         )
 
+
                         OutlinedTextField(
                             value = numberOfPets,
                             onValueChange = {
@@ -510,6 +601,7 @@ fun LoginSignupScreen(
                             singleLine = true,
                             placeholder = { Text("Enter number of pets") }
                         )
+
 
                         if (pets.isNotEmpty()) {
                             Text(
@@ -569,6 +661,7 @@ fun LoginSignupScreen(
                         if (isLogin) {
                             // LOGIN LOGIC
                             if (accountType == "clinic") {
+
                                 if(email.isNotEmpty() && password.isNotEmpty()) {
                                     clinicsViewModel.loginClinic(email, password) { success, error ->
                                         if(success) {
@@ -583,6 +676,7 @@ fun LoginSignupScreen(
                             } else {
                                 userViewModel.loginUser(email, password) { success, error ->
                                     if(success) {
+
                                         navController?.navigate("clinics") {
                                             popUpTo("choose_account") { inclusive = true }
                                         }
@@ -657,6 +751,7 @@ fun LoginSignupScreen(
                                     }
                                 } else {
                                     // USER SIGNUP
+
                                     val petsValid = pets.isEmpty() || pets.all { it.petType.isNotEmpty() }
                                     if (userName.isNotEmpty() && userPhone.isNotEmpty() &&
                                         (numberOfPets.isEmpty() || (numberOfPets.toIntOrNull() ?: 0) > 0) && petsValid
@@ -683,6 +778,7 @@ fun LoginSignupScreen(
                                             pets = petsWithBase64
                                         ) { success, error ->
                                             if (success) {
+
                                                 navController?.navigate("clinics") {
                                                     popUpTo("choose_account") { inclusive = true }
                                                 }
@@ -698,6 +794,7 @@ fun LoginSignupScreen(
                                 }
                             } else {
                                 Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
+
                             }
                         }
                     },
@@ -716,6 +813,7 @@ fun LoginSignupScreen(
                                     phone.isNotEmpty() && workingHours.isNotEmpty() && Rating.isNotEmpty() &&
                                     selectedServices.isNotEmpty() && clinicImageUri != null && licenseImageUri != null
                         } else {
+
                             val petsValid = pets.isEmpty() || pets.all { it.petType.isNotEmpty() }
                             email.isNotEmpty() && password.isNotEmpty() && confirmPassword.isNotEmpty() &&
                                     userName.isNotEmpty() && userPhone.isNotEmpty() &&
@@ -753,6 +851,7 @@ fun UserPetCard(
         onImageSelected(uri)
     }
 
+
     LaunchedEffect(pet.imageUri) {
         if (pet.imageUri != null) {
             val bitmap = loadBitmap(pet.imageUri!!)
@@ -777,6 +876,7 @@ fun UserPetCard(
                 color = primaryDark
             )
 
+
             OutlinedTextField(
                 value = pet.petType,
                 onValueChange = { newType ->
@@ -787,6 +887,7 @@ fun UserPetCard(
                 singleLine = true,
                 placeholder = { Text("Cat, Dog...") }
             )
+
 
             Text(
                 text = "Pet Image (Optional)",

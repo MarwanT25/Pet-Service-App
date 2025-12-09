@@ -1,13 +1,17 @@
 package com.example.petservicetemp
 
 import androidx.compose.foundation.clickable
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+
+import androidx.compose.material.icons.filled.ExitToApp // Logout Icon
+import androidx.compose.material.icons.filled.Person    // Profile Icon
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,79 +21,99 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
-import java.util.*
 
-data class UserBooking(
-    val id: String,
-    val clinicName: String,
-    val service: String,
-    val date: String,
-    val time: String,
-    val status: String // "Pending", "Confirmed", "Completed", "Cancelled"
-)
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import com.google.firebase.auth.FirebaseAuth
+
+// Match the App Theme
+private val BrandGreen = Color(0xFF819067)
+private val BrandDark = Color(0xFF404C35)
+private val BackgroundLight = Color(0xFFF8F8F8)
 
 @Composable
 fun UserHomeScreen(navController: NavHostController?) {
-    val primary = AppTheme.Primary
-    val primaryDark = AppTheme.PrimaryDark
-    val backgroundLight = AppTheme.BackgroundLight
+    val viewModel: ScheduleViewModel = viewModel()
+    val bookings by viewModel.bookings.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
-    // Sample bookings data for user
-    var userBookings by remember {
-        mutableStateOf(
-            listOf(
-                UserBooking("1", "Cat Clinic", "Grooming", "15/12/2024", "10:00 AM", "Confirmed"),
-                UserBooking("2", "Paws Vet", "Checkup", "16/12/2024", "2:00 PM", "Pending"),
-                UserBooking("3", "Happy Tail", "Vaccine", "17/12/2024", "11:00 AM", "Confirmed"),
-                UserBooking("4", "Pet Care Center", "Grooming", "18/12/2024", "3:00 PM", "Pending"),
-                UserBooking("5", "Animal Clinic", "Checkup", "19/12/2024", "9:00 AM", "Completed")
-            )
-        )
-    }
-
-    // Filter and search states
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedStatusFilter by remember { mutableStateOf<String?>(null) }
-    var selectedDateFilter by remember { mutableStateOf<String?>(null) }
-
-    // Filtered bookings
-    val filteredBookings = remember(userBookings, searchQuery, selectedStatusFilter, selectedDateFilter) {
-        userBookings.filter { booking ->
-            val matchesSearch = searchQuery.isEmpty() ||
-                    booking.clinicName.contains(searchQuery, ignoreCase = true) ||
-                    booking.service.contains(searchQuery, ignoreCase = true)
-
-            val matchesStatus = selectedStatusFilter == null || booking.status == selectedStatusFilter
-
-            val matchesDate = selectedDateFilter == null || booking.date == selectedDateFilter
-
-            matchesSearch && matchesStatus && matchesDate
+    UserHomeContent(
+        bookings = bookings,
+        isLoading = isLoading,
+        onProfileClick = {
+            navController?.navigate("user_profile")
+        },
+        onLogoutClick = {
+            FirebaseAuth.getInstance().signOut()
+            navController?.navigate("choose_account") {
+                popUpTo(0)
+            }
         }
+    )
+}
+
+@Composable
+fun UserHomeContent(
+    bookings: List<Booking>,
+    isLoading: Boolean,
+    onProfileClick: () -> Unit,
+    onLogoutClick: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredBookings = bookings.filter { booking ->
+        searchQuery.isEmpty() ||
+                booking.clinicName.contains(searchQuery, ignoreCase = true) ||
+                booking.service.contains(searchQuery, ignoreCase = true)
     }
-
-    // Available statuses for filter
-    val statuses = listOf("Pending", "Confirmed", "Completed", "Cancelled")
-
-    // Available dates for filter
-    val availableDates = userBookings.map { it.date }.distinct()
 
     Scaffold(
-        backgroundColor = backgroundLight
+        // --- TOP BAR IS BACK ---
+        topBar = {
+            TopAppBar(
+                title = { Text("Schedule", textAlign = TextAlign.Center) },
+                backgroundColor = BrandGreen,
+                contentColor = Color.White,
+                elevation = 0.dp,
+                // 1. NAVIGATION ICON = TOP LEFT (LOGOUT)
+                navigationIcon = {
+                    IconButton(onClick = onLogoutClick) {
+                        // Using "ExitToApp" but mirroring it or leaving standard
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "Logout",
+                            tint = Color.White
+                        )
+                    }
+                },
+                // 2. ACTIONS = TOP RIGHT (PROFILE)
+                actions = {
+                    IconButton(onClick = onProfileClick) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profile",
+                            tint = Color.White
+                        )
+                    }
+                }
+            )
+        },
+        backgroundColor = BackgroundLight
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Header
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
                 shape = RoundedCornerShape(12.dp),
                 elevation = 6.dp,
-                backgroundColor = primary
+
+                backgroundColor = BrandGreen
             ) {
                 Column(
                     modifier = Modifier.padding(20.dp),
@@ -103,120 +127,80 @@ fun UserHomeScreen(navController: NavHostController?) {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${filteredBookings.size} bookings found",
+
+                        text = "${bookings.size} bookings found",
                         fontSize = 14.sp,
                         color = Color.White.copy(alpha = 0.9f)
                     )
                 }
             }
 
-            // Search and Filter Row
-            Row(
+
+            // Search Bar
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search clinic or service...") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search...") },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(20.dp),
-                    singleLine = true,
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") }
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = BrandGreen,
+                    cursorColor = BrandGreen,
+                    backgroundColor = Color.White
                 )
-
-                var statusExpanded by remember { mutableStateOf(false) }
-                Box {
-                    IconButton(onClick = { statusExpanded = true }) {
-                        Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = primary)
-                    }
-                    DropdownMenu(
-                        expanded = statusExpanded,
-                        onDismissRequest = { statusExpanded = false }
-                    ) {
-                        DropdownMenuItem(onClick = {
-                            selectedStatusFilter = null
-                            statusExpanded = false
-                        }) {
-                            Text("All Statuses")
-                        }
-                        statuses.forEach { status ->
-                            DropdownMenuItem(onClick = {
-                                selectedStatusFilter = status
-                                statusExpanded = false
-                            }) {
-                                Text(if (selectedStatusFilter == status) "✓ $status" else status)
-                            }
-                        }
-                        Divider()
-                        DropdownMenuItem(onClick = {
-                            selectedDateFilter = null
-                            statusExpanded = false
-                        }) {
-                            Text("All Dates")
-                        }
-                        availableDates.forEach { date ->
-                            DropdownMenuItem(onClick = {
-                                selectedDateFilter = date
-                                statusExpanded = false
-                            }) {
-                                Text(if (selectedDateFilter == date) "✓ $date" else date)
-                            }
-                        }
-                    }
-                }
-            }
+            )
 
             // Bookings List
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(filteredBookings) { booking ->
-                    UserBookingCard(
-                        booking = booking,
-                        onClick = {
-                            // Navigate to booking details
-                            navController?.navigate("user_booking_details/${booking.id}")
-                        }
-                    )
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = BrandGreen)
+                }
+            } else if (bookings.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No appointments yet.", color = Color.Gray)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(filteredBookings) { booking ->
+                        UserBookingCard(booking = booking)
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-fun UserBookingCard(
-    booking: UserBooking,
-    onClick: () -> Unit = {}
-) {
-    val primary = AppTheme.Primary
-    val primaryDark = AppTheme.PrimaryDark
 
-    val statusColor = when (booking.status) {
-        "Pending" -> AppTheme.StatusPending
-        "Confirmed" -> AppTheme.StatusConfirmed
-        "Completed" -> AppTheme.StatusCompleted
-        "Cancelled" -> AppTheme.StatusCancelled
-        else -> AppTheme.Gray
+// --- Components ---
+
+@Composable
+fun UserBookingCard(booking: Booking) {
+    val statusColor = when (booking.status.lowercase()) {
+        "pending" -> Color(0xFF2196F3)
+        "confirmed" -> Color(0xFF4CAF50)
+        "completed" -> Color.Gray
+        "cancelled" -> Color(0xFFF44336)
+        else -> Color(0xFFFFA000)
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        elevation = 4.dp,
+        elevation = 3.dp,
         backgroundColor = Color.White
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -227,77 +211,60 @@ fun UserBookingCard(
                     text = booking.clinicName,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = primaryDark,
-                    modifier = Modifier.weight(1f)
+
+                    color = BrandDark
                 )
-                Card(
-                    backgroundColor = statusColor,
-                    shape = RoundedCornerShape(8.dp)
+
+                Surface(
+                    color = statusColor,
+                    shape = RoundedCornerShape(50)
                 ) {
                     Text(
                         text = booking.status,
                         color = Color.White,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )
                 }
             }
 
-            Divider(color = Color.LightGray)
+            Divider(color = Color(0xFFEEEEEE))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Service",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = booking.service,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = primaryDark
-                    )
-                }
 
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Date",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = booking.date,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = primaryDark
-                    )
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Time",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = booking.time,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = primaryDark
-                    )
-                }
+                UserDetailItem(label = "Service", value = booking.service)
+                UserDetailItem(label = "Date", value = booking.date)
+                UserDetailItem(label = "Time", value = booking.time)
             }
         }
     }
 }
 
-@Preview
+
+@Composable
+fun UserDetailItem(label: String, value: String) {
+    Column {
+        Text(text = label, fontSize = 12.sp, color = Color.Gray)
+        Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = BrandDark)
+    }
+}
+
+@Preview(showBackground = true)
 @Composable
 fun UserHomeScreenPreview() {
-    UserHomeScreen(navController = null)
+    val dummyBookings = listOf(
+        Booking(clinicName = "Paws Vet", service = "Checkup", date = "12/01/2025", time = "10:00 AM", status = "Pending")
+    )
+
+    UserHomeContent(
+        bookings = dummyBookings,
+        isLoading = false,
+        onProfileClick = {},
+        onLogoutClick = {}
+    )
 }

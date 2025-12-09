@@ -33,7 +33,7 @@ class ClinicsViewModel : ViewModel() {
         }
     }
 
-    // دالة علشان نجيب عيادة واحدة بالـ ID
+
     fun fetchClinicById(clinicId: String) {
         viewModelScope.launch {
             try {
@@ -64,7 +64,7 @@ class ClinicsViewModel : ViewModel() {
         }
     }
 
-    // الدالة الأصلية علشان الـ Storage
+
     fun signUpClinic(
         password: String,
         clinicName: String,
@@ -99,7 +99,7 @@ class ClinicsViewModel : ViewModel() {
         }, { e -> onResult(false, e.message) })
     }
 
-    // الدالة علشان الـ Base64
+
     fun signUpClinicWithBase64(
         id:String,
         rating: String,
@@ -143,7 +143,7 @@ class ClinicsViewModel : ViewModel() {
         }
     }
 
-    // دالة تسجيل الدخول
+
     fun loginClinic(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
         repository.loginClinic(email, password) { success, clinic ->
             if (success && clinic != null) {
@@ -154,7 +154,7 @@ class ClinicsViewModel : ViewModel() {
         }
     }
 
-    // دالة علشان نضيف عيادة للاختبار
+
     fun addTestClinic() {
         viewModelScope.launch {
             try {
@@ -182,6 +182,7 @@ class ClinicsViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 Log.e("ClinicsViewModel", "💥 Error adding test clinic: ${e.message}")
+
             }
         }
     }
