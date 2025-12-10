@@ -1,4 +1,5 @@
 package com.example.petservicetemp
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -650,10 +652,47 @@ fun LoginSignupScreen(
                         }
                     }
                 }
+                // أضف هذه الدالة في LoginSignupScreen
+                fun saveUserName(name: String) {
+                    try {
+                        val prefs = context.getSharedPreferences("user_data", Context.MODE_PRIVATE)
+                        prefs.edit().apply {
+                            putString("user_name", name)
+                            apply()
+                        }
+                        Log.d("SAVE_USER", "✅ User name saved to SharedPreferences: $name")
+                    } catch (e: Exception) {
+                        Log.e("SAVE_USER", "❌ Failed to save user name: ${e.message}")
+                    }
+                }
+                fun saveUserEmail(email: String) {
+                    try {
+                        val prefs = context.getSharedPreferences("user_data", Context.MODE_PRIVATE)
+                        val editor = prefs.edit()
+                        editor.putString("user_email", email)
+                        editor.apply()  // استخدم apply() بدلاً من commit() لأنها أسرع
+                        Log.d("SAVE_EMAIL", "✅ Email saved to SharedPreferences: $email")
+
+                        // تحقق من الحفظ
+                        val savedEmail = prefs.getString("user_email", "NOT_SAVED")
+                        Log.d("SAVE_EMAIL", "📝 Verified saved email: $savedEmail")
+                    } catch (e: Exception) {
+                        Log.e("SAVE_EMAIL", "❌ Failed to save email: ${e.message}")
+                    }
+                }
+
+
+                // دالة لقراءة الـ email من SharedPreferences
+                fun getUserEmail(): String {
+                    val prefs = context.getSharedPreferences("user_data", Context.MODE_PRIVATE)
+                    return prefs.getString("user_email", "") ?: ""
+                }
+
 
                 Spacer(modifier = Modifier.height(16.dp))
+                val auth = FirebaseAuth.getInstance()
 
-                // ========== SUBMIT BUTTON - FIXED ==========
+                // ========== SUBMIT BUTTON - UPDATED ==========
                 Button(
                     onClick = {
                         Log.d("SignupButton", "Button clicked - isLogin: $isLogin, accountType: $accountType")
@@ -661,7 +700,6 @@ fun LoginSignupScreen(
                         if (isLogin) {
                             // LOGIN LOGIC
                             if (accountType == "clinic") {
-
                                 if(email.isNotEmpty() && password.isNotEmpty()) {
                                     clinicsViewModel.loginClinic(email, password) { success, error ->
                                         if(success) {
@@ -676,10 +714,29 @@ fun LoginSignupScreen(
                             } else {
                                 userViewModel.loginUser(email, password) { success, error ->
                                     if(success) {
+                                        Log.d("AUTH", "Login successful — currentUser = ${auth.currentUser}")
+                                        Log.d("AUTH", "currentUser email = ${auth.currentUser?.email}")
+                                        Log.d("AUTH", "currentUser uid = ${auth.currentUser?.uid}")
 
+                                        // حفظ الـ email في SharedPreferences
+                                        saveUserEmail(email)
+
+                                        // حفظ الاسم أيضاً إذا كان متوفراً
+                                        val currentUser = FirebaseAuth.getInstance().currentUser
+                                        val userName = currentUser?.displayName ?: email.split("@").firstOrNull() ?: "User"
+                                        saveUserName(userName)
+
+                                        // الانتقال إلى شاشة الـ Profile مباشرة
                                         navController?.navigate("clinics") {
                                             popUpTo("choose_account") { inclusive = true }
                                         }
+
+                                        Toast.makeText(
+                                            context,
+                                            "✅ Welcome back, $userName!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+
                                     } else {
                                         Toast.makeText(context, error ?: "Login failed", Toast.LENGTH_SHORT).show()
                                     }
@@ -705,21 +762,20 @@ fun LoginSignupScreen(
                                             if (logoBase64.isNotEmpty() && licenseBase64.isNotEmpty()) {
                                                 Log.d("ClinicSignup", "Base64 strings created successfully")
 
-                                                // ========== التصحيح: تمرير المعاملات بالترتيب الصحيح ==========
                                                 clinicsViewModel.signUpClinicWithBase64(
-                                                    id = UUID.randomUUID().toString(), // 1. id
-                                                    rating = Rating,                     // 2. rating
-                                                    password = password,                 // 3. password
-                                                    clinicName = clinicName,             // 4. clinicName
-                                                    email = email,                       // 5. email
-                                                    phone = phone,                       // 6. phone
-                                                    address = address,                   // 7. address
-                                                    city = city,                         // 8. city
-                                                    workingHours = workingHours,         // 9. workingHours
-                                                    selectedServices = selectedServices.toList(), // 10. selectedServices
-                                                    logoBase64 = logoBase64,             // 11. logoBase64
-                                                    licenseBase64 = licenseBase64,       // 12. licenseBase64
-                                                    onResult = { success, error ->       // callback
+                                                    id = UUID.randomUUID().toString(),
+                                                    rating = Rating,
+                                                    password = password,
+                                                    clinicName = clinicName,
+                                                    email = email,
+                                                    phone = phone,
+                                                    address = address,
+                                                    city = city,
+                                                    workingHours = workingHours,
+                                                    selectedServices = selectedServices.toList(),
+                                                    logoBase64 = logoBase64,
+                                                    licenseBase64 = licenseBase64,
+                                                    onResult = { success, error ->
                                                         Log.d("ClinicSignup", "ViewModel callback: Success=$success, Error=$error")
                                                         if (success) {
                                                             navController?.navigate("clinic_home/$email") {
@@ -744,18 +800,24 @@ fun LoginSignupScreen(
                                     } else {
                                         Toast.makeText(context, "Please fill all required fields", Toast.LENGTH_LONG).show()
                                         Log.d("ClinicSignup", "Validation failed - Missing fields")
-                                        Log.d("ClinicSignup", "Email: ${email.isNotEmpty()}, Password: ${password.isNotEmpty()}")
-                                        Log.d("ClinicSignup", "ClinicName: ${clinicName.isNotEmpty()}, Rating: ${Rating.isNotEmpty()}")
-                                        Log.d("ClinicSignup", "Services: ${selectedServices.isNotEmpty()}")
-                                        Log.d("ClinicSignup", "Images: Clinic=${clinicImageUri != null}, License=${licenseImageUri != null}")
                                     }
                                 } else {
                                     // USER SIGNUP
-
                                     val petsValid = pets.isEmpty() || pets.all { it.petType.isNotEmpty() }
-                                    if (userName.isNotEmpty() && userPhone.isNotEmpty() &&
-                                        (numberOfPets.isEmpty() || (numberOfPets.toIntOrNull() ?: 0) > 0) && petsValid
-                                    ) {
+
+                                    // تحقق من جميع الحقول المطلوبة
+                                    val fieldsValid = listOf(
+                                        email.isNotEmpty() to "Email",
+                                        password.isNotEmpty() to "Password",
+                                        confirmPassword.isNotEmpty() to "Confirm Password",
+                                        userName.isNotEmpty() to "Name",
+                                        userPhone.isNotEmpty() to "Phone"
+                                    )
+
+                                    val missingFields = fieldsValid.filter { !it.first }.map { it.second }
+
+                                    if (missingFields.isEmpty() && (numberOfPets.isEmpty() || (numberOfPets.toIntOrNull() ?: 0) > 0) && petsValid) {
+
                                         val petsWithBase64 = pets.map { pet ->
                                             val petImageBase64 = if (pet.bitmap != null) {
                                                 bitmapToBase64(pet.bitmap)
@@ -770,6 +832,10 @@ fun LoginSignupScreen(
                                             )
                                         }
 
+                                        Log.d("UserSignup", "🎯 Starting user registration...")
+                                        Log.d("UserSignup", "👤 Name: $userName, Email: $email")
+                                        Log.d("UserSignup", "📞 Phone: $userPhone, Pets: ${petsWithBase64.size}")
+
                                         userViewModel.signUpUserWithBase64(
                                             password = password,
                                             userName = userName,
@@ -778,23 +844,50 @@ fun LoginSignupScreen(
                                             pets = petsWithBase64
                                         ) { success, error ->
                                             if (success) {
+                                                Log.d("UserSignup", "✅ Registration successful!")
 
+                                                // حفظ البيانات في SharedPreferences
+                                                saveUserEmail(email)
+                                                saveUserName(userName)
+
+                                                Toast.makeText(
+                                                    context,
+                                                    "✅ Welcome $userName! Registration successful!",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+
+                                                // الانتقال إلى شاشة الـ Profile مباشرة
                                                 navController?.navigate("clinics") {
                                                     popUpTo("choose_account") { inclusive = true }
                                                 }
+
                                             } else {
+                                                Log.e("UserSignup", "❌ Registration failed: $error")
                                                 Toast.makeText(
                                                     context,
-                                                    error ?: "Failed to register user",
-                                                    Toast.LENGTH_SHORT
+                                                    "❌ Failed to register: ${error ?: "Unknown error"}",
+                                                    Toast.LENGTH_LONG
                                                 ).show()
                                             }
+                                        }
+                                    } else {
+                                        if (missingFields.isNotEmpty()) {
+                                            Toast.makeText(
+                                                context,
+                                                "❌ Missing fields: ${missingFields.joinToString(", ")}",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        } else if (!petsValid) {
+                                            Toast.makeText(
+                                                context,
+                                                "❌ Please enter pet types for all pets",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         }
                                     }
                                 }
                             } else {
-                                Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
-
+                                Toast.makeText(context, "❌ Passwords do not match", Toast.LENGTH_SHORT).show()
                             }
                         }
                     },

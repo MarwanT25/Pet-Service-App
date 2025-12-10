@@ -1,6 +1,7 @@
 package com.example.petservicetemp
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -20,14 +21,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
 
 class ClinicDetails : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,7 +47,6 @@ fun ClinicDetailsScreen(
     clinic: Clinic,
     navController: NavHostController
 ) {
-    // Debug علشان نتأكد من البيانات
     LaunchedEffect(clinic) {
         println("🎯 ClinicDetails - Name: ${clinic.name}")
         println("🎯 ClinicDetails - ID: ${clinic.id}")
@@ -58,12 +59,24 @@ fun ClinicDetailsScreen(
     ClinicAppBar(clinic = clinic, navController = navController)
 }
 
+fun getSavedUserEmail(context: android.content.Context): String {
+    return try {
+        val prefs = context.getSharedPreferences("user_data", android.content.Context.MODE_PRIVATE)
+        prefs.getString("user_email", "") ?: ""
+    } catch (e: Exception) {
+        Log.e("CLINIC_DETAILS", "Error reading saved email: ${e.message}")
+        ""
+    }
+}
+
 @Preview
 @Composable
 fun ClinicAppBar(
     clinic: Clinic? = null,
     navController: NavHostController? = null
 ) {
+    val context = LocalContext.current
+
     Scaffold(topBar = {
         TopAppBar(
             title = {
@@ -81,14 +94,14 @@ fun ClinicAppBar(
                 }
             },
 
-            actions = {
-                IconButton(onClick = { }) {
-                    Icon(Icons.Default.Favorite, contentDescription = "Favorite")
-                }
-            }
         )
     }) { innerPadding ->
-        ClinicBody(clinic = clinic, navController = navController, modifier = Modifier.padding(innerPadding))
+        ClinicBody(
+            clinic = clinic,
+            navController = navController,
+            modifier = Modifier.padding(innerPadding),
+            context = context
+        )
     }
 }
 
@@ -96,7 +109,8 @@ fun ClinicAppBar(
 fun ClinicBody(
     clinic: Clinic? = null,
     navController: NavHostController? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    context: android.content.Context
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         // Header Card بدون صورة
@@ -183,15 +197,52 @@ fun ClinicBody(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // زر الحجز - محدث ليرسل clinicId مع البيانات
                 Button(
                     onClick = {
                         clinic?.let {
+                            val auth = FirebaseAuth.getInstance()
+                            val currentUser = auth.currentUser
+
+                            val userEmail = when {
+                                currentUser?.email?.isNotEmpty() == true -> {
+                                    Log.d("CLINIC_DETAILS", "Using Firebase Auth email")
+                                    currentUser.email!!
+                                }
+                                else -> {
+                                    val savedEmail = getSavedUserEmail(context)
+                                    if (savedEmail.isNotEmpty()) {
+                                        Log.d("CLINIC_DETAILS", "Using saved email from SharedPreferences")
+                                        savedEmail
+                                    } else {
+                                        Log.w("CLINIC_DETAILS", "No email found, using guest")
+                                        "guest@example.com"
+                                    }
+                                }
+                            }
+
+                            val userName = when {
+                                currentUser?.displayName?.isNotEmpty() == true -> {
+                                    currentUser.displayName!!
+                                }
+                                else -> {
+                                    userEmail.split("@").firstOrNull() ?: "User"
+                                }
+                            }
+
+                            Log.d("CLINIC_DETAILS", "🎯 Booking initiated")
+                            Log.d("CLINIC_DETAILS", "📋 Clinic: ${it.name} (ID: ${it.id})")
+                            Log.d("CLINIC_DETAILS", "👤 User: $userName ($userEmail)")
+
                             val encodedName = java.net.URLEncoder.encode(it.name, "UTF-8")
                             val encodedLocation = java.net.URLEncoder.encode(it.location, "UTF-8")
                             val encodedPhone = java.net.URLEncoder.encode(it.phoneNumber, "UTF-8")
+                            val encodedEmail = java.net.URLEncoder.encode(userEmail, "UTF-8")
+                            val encodedUserName = java.net.URLEncoder.encode(userName, "UTF-8")
+
                             navController?.navigate(
-                                "booking/${it.id}/$encodedName/${it.rating}/${it.isOpen}/$encodedLocation/${it.reviews}/$encodedPhone"
+                                "booking/${it.id}/$encodedName/${it.rating}/${it.isOpen}/" +
+                                        "$encodedLocation/${it.reviews}/$encodedPhone/" +
+                                        "$encodedEmail/$encodedUserName"
                             )
                         }
                     },

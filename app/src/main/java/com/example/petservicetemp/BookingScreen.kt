@@ -3,7 +3,9 @@ package com.example.petservicetemp
 import android.app.Activity
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -36,9 +38,35 @@ class BookingScreen : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val clinicName = intent.getStringExtra("clinicName") ?: "Clinic Name"
         val clinicId = intent.getStringExtra("clinicId") ?: ""
-        setContent {
-            BookingScreenStyled(clinicName = clinicName, clinicId = clinicId)
+
+        // ========== الحصول على الـ email المحفوظ ==========
+        val savedEmail = getSavedUserEmail()
+        val userEmail = if (savedEmail.isNotEmpty()) {
+            savedEmail
+        } else {
+            // محاولة الحصول من Firebase Auth
+            FirebaseAuth.getInstance().currentUser?.email ?: "guest@example.com"
         }
+
+        // محاولة الحصول على اسم المستخدم
+        val userName = intent.getStringExtra("userName") ?:
+        FirebaseAuth.getInstance().currentUser?.displayName ?:
+        "Guest User"
+
+        setContent {
+            BookingScreenStyled(
+                clinicName = clinicName,
+                clinicId = clinicId,
+                userEmail1 = userEmail,
+                userName1 = userName
+            )
+        }
+    }
+
+    // ========== دالة لقراءة الـ email من SharedPreferences ==========
+    private fun getSavedUserEmail(): String {
+        val prefs = getSharedPreferences("user_data", Context.MODE_PRIVATE)
+        return prefs.getString("user_email", "") ?: ""
     }
 }
 
@@ -51,6 +79,8 @@ fun BookingScreenStyled(
     location: String = "Cairo, Egypt",
     reviews: Int = 0,
     phoneNumber: String = "",
+    userEmail1: String = "", // **جديد: email المستخدم من الـ navigation**
+    userName1: String = "",  // **جديد: اسم المستخدم من الـ navigation**
     navController: NavHostController? = null
 ) {
     val primary = Color(0xFF819067)
@@ -58,7 +88,37 @@ fun BookingScreenStyled(
 
     // Firebase Instances
     val db = FirebaseFirestore.getInstance()
+    val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
+
+    // ========== دالة لقراءة الـ email من SharedPreferences ==========
+    fun getSavedUserEmail(): String {
+        val prefs = context.getSharedPreferences("user_data", Context.MODE_PRIVATE)
+        return prefs.getString("user_email", "") ?: ""
+    }
+
+    // ========== دالة للحصول على الـ email من Firebase Auth ==========
+    fun getFirebaseUserEmail(): String {
+        return auth.currentUser?.email ?: ""
+    }
+
+    // ========== تحديد الـ email النهائي ==========
+    val finalUserEmail = remember(userEmail1) {
+        when {
+            userEmail1.isNotEmpty() -> userEmail1
+            getSavedUserEmail().isNotEmpty() -> getSavedUserEmail()
+            getFirebaseUserEmail().isNotEmpty() -> getFirebaseUserEmail()
+            else -> "guest@example.com"
+        }
+    }
+
+    val finalUserName = remember(userName1) {
+        when {
+            userName1.isNotEmpty() -> userName1
+            auth.currentUser?.displayName?.isNotEmpty() == true -> auth.currentUser?.displayName ?: "Guest"
+            else -> "Guest User"
+        }
+    }
 
     // States
     var selectedService by remember { mutableStateOf("") }
@@ -71,8 +131,6 @@ fun BookingScreenStyled(
     var servicesList by remember { mutableStateOf<List<String>>(emptyList()) }
     var isLoadingServices by remember { mutableStateOf(true) }
 
-    val context = LocalContext.current
-
     // Fetch clinic data from Firebase
     LaunchedEffect(clinicId) {
         if (clinicId.isNotEmpty()) {
@@ -83,19 +141,25 @@ fun BookingScreenStyled(
                         val services = document.get("services") as? List<String> ?: emptyList()
                         servicesList = services
                         isLoadingServices = false
+                        Log.d("BOOKING", "✅ Loaded services: $servicesList")
+                        Log.d("BOOKING", "📧 Final user email: $finalUserEmail")
+                        Log.d("BOOKING", "👤 Final user name: $finalUserName")
                     } else {
                         isLoadingServices = false
                         Toast.makeText(context, "Clinic not found", Toast.LENGTH_SHORT).show()
+                        Log.d("BOOKING", "❌ Clinic not found: $clinicId")
                     }
                 }
                 .addOnFailureListener {
                     isLoadingServices = false
                     Toast.makeText(context, "Failed to load clinic data", Toast.LENGTH_SHORT).show()
+                    Log.d("BOOKING", "❌ Failed to load clinic data")
                 }
         } else {
             isLoadingServices = false
             // Use default services if no clinicId
             servicesList = listOf("Grooming", "Checkup", "Vaccine")
+            Log.d("BOOKING", "⚠️ Using default services, no clinicId provided")
         }
     }
 
@@ -195,7 +259,7 @@ fun BookingScreenStyled(
 
                         // Status
                         Text(
-                            if (isOpen) "🟢 Open Now" else "🔴 Currently Closed",
+                            if (isOpen) "Open Now" else "Currently Closed",
                             fontSize = 16.sp,
                             color = if (isOpen) Color(0xFF4CAF50) else Color.Red,
                             fontWeight = FontWeight.Medium
@@ -205,11 +269,31 @@ fun BookingScreenStyled(
 
                         // Location
                         Text(
-                            "📍 $location",
+                            "$location",
                             fontSize = 14.sp,
                             color = Color.Gray,
                             textAlign = TextAlign.Center
                         )
+
+                        // **معلومات المستخدم المحفوظة**
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                "Booking for: $finalUserName",
+                                fontSize = 12.sp,
+                                color = Color(0xFF819067),
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                "Email: $finalUserEmail",
+                                fontSize = 10.sp,
+                                color = Color(0xFF666666),
+                                fontWeight = FontWeight.Normal
+                            )
+                        }
                     }
                 }
             }
@@ -400,48 +484,73 @@ fun BookingScreenStyled(
                         Text("Service: ${selectedService.ifEmpty { "Not selected" }}")
                         Text("Date: ${selectedDate.ifEmpty { "Not selected" }} — ${selectedTime.ifEmpty { "Not selected" }}")
                         Text("Price: 250 EGP")
+
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                "Booking for: $finalUserName",
+                                fontSize = 12.sp,
+                                color = Color(0xFF819067),
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                "Email: $finalUserEmail",
+                                fontSize = 11.sp,
+                                color = Color(0xFF666666)
+                            )
+                        }
+
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Button(
                             onClick = {
                                 if (isBooking) return@Button
 
-                                val user = auth.currentUser
+                                // **التحقق من صحة البيانات**
+                                Log.d("BOOKING", "✅ Booking started for: $finalUserEmail ($finalUserName)")
+                                Log.d("BOOKING", "📋 Service: $selectedService, Date: $selectedDate, Time: $selectedTime")
 
-                                if (user?.email != null) {
-                                    isBooking = true
-
-                                    // Include clinicId in booking data
-                                    val bookingData = hashMapOf(
-                                        "userId" to user.email,
-                                        "userName" to (user.displayName ?: user.email?.split("@")?.firstOrNull() ?: "User"),
-                                        "clinicId" to clinicId,
-                                        "clinicName" to clinicName,
-                                        "service" to selectedService,
-                                        "date" to selectedDate,
-                                        "time" to selectedTime,
-                                        "status" to "Pending",
-                                        "notes" to notes,
-                                        "timestamp" to System.currentTimeMillis(),
-                                        "price" to 250.0
-                                    )
-
-                                    // Save to Firestore
-                                    db.collection("bookings")
-                                        .add(bookingData)
-                                        .addOnSuccessListener {
-                                            isBooking = false
-                                            Toast.makeText(context, "Booking confirmed!", Toast.LENGTH_LONG).show()
-                                            navController?.popBackStack()
-                                        }
-                                        .addOnFailureListener { e ->
-                                            isBooking = false
-                                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-                                        }
-
-                                } else {
-                                    Toast.makeText(context, "Log in el awel ya3m", Toast.LENGTH_SHORT).show()
+                                // **تأكد من وجود البيانات المطلوبة**
+                                if (selectedService.isEmpty() || selectedDate.isEmpty() || selectedTime.isEmpty()) {
+                                    Toast.makeText(context, "Please select service, date and time", Toast.LENGTH_SHORT).show()
+                                    return@Button
                                 }
+
+                                isBooking = true
+
+                                // Include clinicId in booking data
+                                val bookingData = hashMapOf(
+                                    "userId" to finalUserEmail, // **استخدام email المستخدم**
+                                    "userName" to finalUserName, // **استخدام اسم المستخدم**
+                                    "clinicId" to clinicId,
+                                    "clinicName" to clinicName,
+                                    "service" to selectedService,
+                                    "date" to selectedDate,
+                                    "time" to selectedTime,
+                                    "status" to "Pending",
+                                    "notes" to notes,
+                                    "timestamp" to System.currentTimeMillis(),
+                                    "price" to 250.0
+                                )
+
+                                Log.d("BOOKING", "💾 Saving booking data for: $finalUserEmail")
+                                Log.d("BOOKING", "📊 Booking data: $bookingData")
+
+                                // Save to Firestore
+                                db.collection("bookings")
+                                    .add(bookingData)
+                                    .addOnSuccessListener {
+                                        isBooking = false
+                                        Log.d("BOOKING", "✅ Booking saved successfully! Document ID: ${it.id}")
+                                        Toast.makeText(context, "Booking confirmed for $finalUserName!", Toast.LENGTH_LONG).show()
+                                        navController?.popBackStack()
+                                    }
+                                    .addOnFailureListener { e ->
+                                        isBooking = false
+                                        Log.e("BOOKING", "❌ Failed to save booking: ${e.message}", e)
+                                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                                    }
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
@@ -480,6 +589,8 @@ fun BookingScreenPreview() {
         isOpen = true,
         location = "Cairo, Egypt",
         reviews = 120,
-        phoneNumber = "01234567890"
+        phoneNumber = "01234567890",
+        userEmail1 = "user@example.com",
+        userName1 = "Test User"
     )
 }

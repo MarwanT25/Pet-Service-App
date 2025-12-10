@@ -21,6 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.petservicetemp.ui.theme.PetServiceTempTheme
 import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.net.URLDecoder
 
@@ -42,7 +43,7 @@ class MainActivity : ComponentActivity() {
 
     private fun testFirebaseConnection() {
         try {
-            Log.d("FIREBASE_TEST", "🚀  Firebase...")
+            Log.d("FIREBASE_TEST", "🚀 Firebase...")
             // Test Firebase connection code here
         } catch (e: Exception) {
             Log.e("FIREBASE_TEST", "💥 : ${e.message}")
@@ -53,6 +54,57 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Navigation() {
     val navController = rememberNavController()
+    val firestore = FirebaseFirestore.getInstance()
+    val auth = FirebaseAuth.getInstance()
+
+    // State to hold current user
+    var currentUser by remember { mutableStateOf<SimpleUser?>(null) }
+
+    // Fetch current user data when navigation starts
+    LaunchedEffect(Unit) {
+        val firebaseUser = auth.currentUser
+        if (firebaseUser != null) {
+            // Try to get user data from Firestore
+            firestore.collection("users")
+                .whereEqualTo("email", firebaseUser.email)
+                .get()
+                .addOnSuccessListener { querySnapshot ->
+                    if (!querySnapshot.isEmpty) {
+                        val userDoc = querySnapshot.documents.first()
+                        currentUser = SimpleUser(
+                            uid = firebaseUser.uid,
+                            email = firebaseUser.email,
+                            displayName = userDoc.getString("name") ?:
+                            firebaseUser.displayName ?:
+                            firebaseUser.email?.split("@")?.firstOrNull()
+                        )
+                        Log.d("NAVIGATION", "User loaded from Firestore: ${currentUser?.email}")
+                    } else {
+                        // Fallback to FirebaseAuth data
+                        currentUser = SimpleUser(
+                            uid = firebaseUser.uid,
+                            email = firebaseUser.email,
+                            displayName = firebaseUser.displayName ?:
+                            firebaseUser.email?.split("@")?.firstOrNull()
+                        )
+                        Log.d("NAVIGATION", "User loaded from Auth: ${currentUser?.email}")
+                    }
+                }
+                .addOnFailureListener { e ->
+                    // Fallback to FirebaseAuth data
+                    currentUser = SimpleUser(
+                        uid = firebaseUser.uid,
+                        email = firebaseUser.email,
+                        displayName = firebaseUser.displayName ?:
+                        firebaseUser.email?.split("@")?.firstOrNull()
+                    )
+                    Log.d("NAVIGATION", "User loaded from Auth (fallback): ${currentUser?.email}")
+                }
+        } else {
+            Log.d("NAVIGATION", "No user logged in")
+            currentUser = null
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -81,9 +133,9 @@ fun Navigation() {
             ClinicScreen(navController = navController)
         }
 
-        // Updated booking route to include clinicId
+        // Updated booking route to include currentUser
         composable(
-            route = "booking/{clinicId}/{clinicName}/{rating}/{isOpen}/{location}/{reviews}/{phoneNumber}",
+            route = "booking/{clinicId}/{clinicName}/{rating}/{isOpen}/{location}/{reviews}/{phoneNumber}/{userEmail}/{userName}",
             arguments = listOf(
                 navArgument("clinicId") { type = NavType.StringType },
                 navArgument("clinicName") { type = NavType.StringType },
@@ -91,7 +143,9 @@ fun Navigation() {
                 navArgument("isOpen") { type = NavType.BoolType },
                 navArgument("location") { type = NavType.StringType },
                 navArgument("reviews") { type = NavType.IntType },
-                navArgument("phoneNumber") { type = NavType.StringType }
+                navArgument("phoneNumber") { type = NavType.StringType },
+                navArgument("userEmail") { type = NavType.StringType },
+                navArgument("userName") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val clinicId = backStackEntry.arguments?.getString("clinicId") ?: ""
@@ -101,6 +155,8 @@ fun Navigation() {
             val location = URLDecoder.decode(backStackEntry.arguments?.getString("location") ?: "", "UTF-8")
             val reviews = backStackEntry.arguments?.getInt("reviews") ?: 0
             val phoneNumber = URLDecoder.decode(backStackEntry.arguments?.getString("phoneNumber") ?: "", "UTF-8")
+            val username = URLDecoder.decode(backStackEntry.arguments?.getString("userName") ?: "", "UTF-8")
+            val useremail = URLDecoder.decode(backStackEntry.arguments?.getString("userEmail") ?: "", "UTF-8")
 
             BookingScreenStyled(
                 clinicId = clinicId,
@@ -110,10 +166,11 @@ fun Navigation() {
                 location = location,
                 reviews = reviews,
                 phoneNumber = phoneNumber,
-                navController = navController
+                navController = navController,
+                userName1 = username,
+                userEmail1 = useremail
             )
         }
-
         composable(
             route = "clinic_home/{clinicName}",
             arguments = listOf(
@@ -165,11 +222,22 @@ fun Navigation() {
             }
         }
 
-        composable("user_profile") {
-            UserProfileScreen(navController = navController)
+        composable("user_profile") { backStackEntry ->
+            // تمرير الـ currentUser من الـ MainActivity إلى الـ UserProfileScreen
+            val simpleUser = currentUser
+            UserProfileScreen(
+                navController = navController,
+
+            )
         }
         composable("user_home") {
             UserHomeScreen(navController = navController)
         }
     }
 }
+
+data class SimpleUser(
+    val uid: String? = null,
+    val email: String? = null,
+    val displayName: String? = null
+)
